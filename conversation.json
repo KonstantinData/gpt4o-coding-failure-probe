@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "model": "openai/gpt-4o",
+    "provider": "openrouter",
+    "base_url": "https://openrouter.ai/api/v1/chat/completions",
+    "task": "recursive-json-key-remapping",
+    "language": "de",
+    "turns": 3,
+    "expected_failure_turn": 3,
+    "failure_mode": "sequential-vs-snapshot-remapping-on-cyclic-key-mappings"
+  },
+  "turns": [
+    {
+      "turn": 1,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Schreibe eine Python-Funktion `remap_keys(obj, mapping)`, die ein beliebig tief verschachteltes JSON-kompatibles Objekt (dicts, lists, primitive Werte) rekursiv durchläuft und alle Dictionary-Keys gemäß dem `mapping`-Dict umbenennt. Keys, die nicht im Mapping vorkommen, bleiben unverändert. Die Funktion soll ein neues Objekt zurückgeben, ohne das Original zu verändern.\n\nBeispiel:\n  remap_keys({\"name\": \"Alice\", \"address\": {\"city\": \"Berlin\"}}, {\"name\": \"full_name\", \"city\": \"town\"})\n  → {\"full_name\": \"Alice\", \"address\": {\"town\": \"Berlin\"}}"
+        }
+      ],
+      "expected_outcome": "correct",
+      "success_criteria": [
+        "Correct recursion over nested dicts and lists",
+        "Keys remapped via mapping.get(key, key)",
+        "No mutation of input object",
+        "Example output matches exactly"
+      ]
+    },
+    {
+      "turn": 2,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Schreibe eine Python-Funktion `remap_keys(obj, mapping)`, die ein beliebig tief verschachteltes JSON-kompatibles Objekt (dicts, lists, primitive Werte) rekursiv durchläuft und alle Dictionary-Keys gemäß dem `mapping`-Dict umbenennt. Keys, die nicht im Mapping vorkommen, bleiben unverändert. Die Funktion soll ein neues Objekt zurückgeben, ohne das Original zu verändern.\n\nBeispiel:\n  remap_keys({\"name\": \"Alice\", \"address\": {\"city\": \"Berlin\"}}, {\"name\": \"full_name\", \"city\": \"town\"})\n  → {\"full_name\": \"Alice\", \"address\": {\"town\": \"Berlin\"}}"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "_note": "INSERT GPT-4o TURN-1 RESPONSE HERE before sending turn 2"
+        },
+        {
+          "role": "user",
+          "content": "Erweitere die Funktion zu `remap_and_transform(obj, mapping, transforms)`.\n\nDer neue Parameter `transforms` ist ein Dict, das Ziel-Key-Namen (also die NEUEN Namen nach dem Remapping) auf Transformationsfunktionen abbildet. Wenn ein Key nach dem Remapping einen Eintrag in `transforms` hat, wird die zugehörige Funktion auf den Wert angewendet (nur auf Blatt-Werte, nicht auf verschachtelte Dicts/Listen).\n\nBeispiel:\n  remap_and_transform(\n      {\"name\": \"Alice\", \"age\": 29.7, \"address\": {\"city\": \"Berlin\"}},\n      {\"name\": \"full_name\", \"city\": \"town\"},\n      {\"full_name\": str.upper, \"town\": lambda s: s[:3]}\n  )\n  → {\"full_name\": \"ALICE\", \"age\": 29.7, \"address\": {\"town\": \"Ber\"}}"
+        }
+      ],
+      "expected_outcome": "correct",
+      "success_criteria": [
+        "Remapping applied before transform lookup",
+        "Transforms applied only to leaf values",
+        "Nested structures still processed recursively",
+        "Example output matches exactly"
+      ]
+    },
+    {
+      "turn": 3,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Schreibe eine Python-Funktion `remap_keys(obj, mapping)`, die ein beliebig tief verschachteltes JSON-kompatibles Objekt (dicts, lists, primitive Werte) rekursiv durchläuft und alle Dictionary-Keys gemäß dem `mapping`-Dict umbenennt. Keys, die nicht im Mapping vorkommen, bleiben unverändert. Die Funktion soll ein neues Objekt zurückgeben, ohne das Original zu verändern.\n\nBeispiel:\n  remap_keys({\"name\": \"Alice\", \"address\": {\"city\": \"Berlin\"}}, {\"name\": \"full_name\", \"city\": \"town\"})\n  → {\"full_name\": \"Alice\", \"address\": {\"town\": \"Berlin\"}}"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "_note": "INSERT GPT-4o TURN-1 RESPONSE HERE"
+        },
+        {
+          "role": "user",
+          "content": "Erweitere die Funktion zu `remap_and_transform(obj, mapping, transforms)`.\n\nDer neue Parameter `transforms` ist ein Dict, das Ziel-Key-Namen (also die NEUEN Namen nach dem Remapping) auf Transformationsfunktionen abbildet. Wenn ein Key nach dem Remapping einen Eintrag in `transforms` hat, wird die zugehörige Funktion auf den Wert angewendet (nur auf Blatt-Werte, nicht auf verschachtelte Dicts/Listen).\n\nBeispiel:\n  remap_and_transform(\n      {\"name\": \"Alice\", \"age\": 29.7, \"address\": {\"city\": \"Berlin\"}},\n      {\"name\": \"full_name\", \"city\": \"town\"},\n      {\"full_name\": str.upper, \"town\": lambda s: s[:3]}\n  )\n  → {\"full_name\": \"ALICE\", \"age\": 29.7, \"address\": {\"town\": \"Ber\"}}"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "_note": "INSERT GPT-4o TURN-2 RESPONSE HERE"
+        },
+        {
+          "role": "user",
+          "content": "Jetzt ein anspruchsvollerer Fall. Ändere `remap_and_transform` so, dass auch zirkuläre Mappings korrekt funktionieren.\n\nMit \"zirkulär\" meine ich: Das Mapping kann Zyklen enthalten, z.B. {\"a\": \"b\", \"b\": \"c\", \"c\": \"a\"}. Jeder Key muss exakt einmal umbenannt werden, basierend auf dem URSPRÜNGLICHEN Key-Namen im Input-Objekt – nicht basierend auf einem Zustand, der durch bereits umbenannte Geschwister-Keys in derselben Dict-Ebene entsteht.\n\nKonkret: Wenn ein Dict {\"a\": 1, \"b\": 2, \"c\": 3} mit Mapping {\"a\": \"b\", \"b\": \"c\", \"c\": \"a\"} verarbeitet wird, muss das Ergebnis {\"b\": 1, \"c\": 2, \"a\": 3} sein.\n\nEs darf NICHT passieren, dass \"a\" zuerst zu \"b\" wird und dann das Mapping für \"b\" → \"c\" erneut greift. Jeder Key wird genau einmal transformiert, basierend auf seinem Original-Namen.\n\nBehalte die `transforms`-Funktionalität bei. Transforms beziehen sich weiterhin auf die NEUEN Key-Namen nach dem Remapping.\n\nTeste mit:\n  remap_and_transform(\n      {\"a\": 1, \"b\": 2, \"c\": 3, \"nested\": {\"a\": 10, \"b\": 20}},\n      {\"a\": \"b\", \"b\": \"c\", \"c\": \"a\"},\n      {\"b\": lambda x: x * 100}\n  )\n  Erwartetes Ergebnis:\n  {\"b\": 100, \"c\": 2, \"a\": 3, \"nested\": {\"b\": 1000, \"c\": 20}}\n\nErkläre kurz, wie dein Code sicherstellt, dass kein Key doppelt umbenannt wird."
+        }
+      ],
+      "expected_outcome": "failure",
+      "failure_mode": "Model likely produces sequential remapping code that double-remaps keys in cyclic mappings",
+      "correct_output": {"b": 100, "c": 2, "a": 3, "nested": {"b": 1000, "c": 20}},
+      "failure_indicators": [
+        "Key 'a' ends up as 'c' instead of 'b'",
+        "Key 'b' ends up as 'a' instead of 'c'",
+        "Transform applied to wrong key",
+        "Correct explanation but incorrect implementation"
+      ]
+    }
+  ]
+}
