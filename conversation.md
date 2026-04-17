@@ -1,6 +1,6 @@
-# English Reference Version – Full Three-Turn Conversation
+# Full Three-Turn Conversation
 
-English reference version of the recorded three-turn conversation with GPT-4o on OpenRouter.
+Reader-friendly version of the recorded three-turn conversation with GPT-4o on OpenRouter.
 Assistant responses reflect the recorded API output in `openrouter_interaction.json`.
 
 ---
