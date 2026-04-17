@@ -39,11 +39,11 @@
         ]
       },
       "failure_indicators": [
-        "tags.* not matched (dicts in lists get wrong path)",
-        "** overrides specific rules (no specificity logic)",
-        "** doesn't match zero levels",
-        "Crash on list traversal",
-        "Transforms applied to wrong keys"
+        "Dicts in lists get wrong path, so tags.* does not match",
+        "** overrides specific rules due to missing specificity logic",
+        "** does not match zero levels (top-level)",
+        "Crash during list traversal",
+        "Transforms applied to wrong keys or not at all"
       ]
     }
   ]

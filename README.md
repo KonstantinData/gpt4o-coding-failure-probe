@@ -1,23 +1,23 @@
 # gpt4o-coding-failure-probe
 
-Designs and documents a three-turn GPT-4o coding interaction where early turns succeed and the final turn reveals a targeted model failure.
+A three-turn coding conversation with GPT-4o where the first two turns produce correct results and the third turn exposes a specific model failure.
 
 ## Task
 
-Recursive JSON key-remapping in Python with path-based wildcard rules and specificity precedence as the failure trigger.
+Recursive JSON key-remapping in Python. The failure trigger is path-based wildcard rules with specificity precedence.
 
 ## Deliverables
 
 | File | Content |
 |---|---|
-| `conversation_design.md` | Full conversation design with three turns, success criteria, and failure analysis (DE) |
-| `conversation.json` | Structured JSON conversation template for reproducible testing |
-| `conversation_en.md` | Complete English reference translation of all three prompts |
-| `analysis_note_en.md` | English analysis: task logic, failure mode, correct solution sketch |
-| `openrouter_interaction.json` | Exported full interaction with GPT-4o responses and verification |
+| `conversation_design.md` | Three-turn conversation design with success criteria and failure analysis (German) |
+| `conversation.json` | Structured JSON conversation template |
+| `conversation_en.md` | Full English translation of the conversation, including model responses |
+| `analysis_note_en.md` | English analysis note covering task logic, failure mode, and a correct solution sketch |
+| `openrouter_interaction.json` | Recorded GPT-4o interaction with verification results |
 
 ## Failure Mode
 
-**Path-based pattern matching with wildcards and specificity precedence in recursive tree transformation.**
+Path-based pattern matching with wildcards (`*`, `**`) and specificity-based rule selection inside a recursive tree transformation.
 
-Turns 1–2 use simple global mappings where GPT-4o produces correct code. Turn 3 introduces path-based rules with `*` and `**` wildcards, specificity-based rule selection, and list traversal semantics. GPT-4o fails on the combination of these constraints: path matching through lists, `**` zero-or-more globbing, and most-specific-rule-wins precedence.
+Turns 1 and 2 use a single global mapping dict — GPT-4o handles these correctly. Turn 3 switches to path-scoped rules with wildcard patterns and a most-specific-rule-wins precedence. GPT-4o fails on the interaction of three things: matching paths through lists, implementing `**` as zero-or-more (not one-or-more), and selecting the most specific rule instead of the first match.

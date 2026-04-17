@@ -1,8 +1,8 @@
-# Dreiturnige GPT-4o Coding-Interaktion – Conversation Design
+# Conversation Design – Dreiturnige GPT-4o Coding-Interaktion
 
-## Coding-Aufgabe
+## Aufgabe
 
-Rekursive Transformation eines verschachtelten JSON-Objekts in Python mit regelbasiertem Key-Remapping und bedingter Wertmanipulation.
+Rekursive Transformation verschachtelter JSON-Objekte in Python. Key-Remapping mit bedingter Wertmanipulation, aufsteigend bis zu pfadbasierten Regeln mit Wildcards.
 
 ---
 
@@ -22,19 +22,15 @@ Beispiel:
   → {"full_name": "Alice", "address": {"town": "Berlin"}}
 ```
 
-### Erwartete Wirkung
+### Erwartung
 
-GPT-4o liefert eine korrekte rekursive Funktion, die:
-- Dicts, Listen und primitive Werte korrekt unterscheidet,
-- Keys per `mapping.get(key, key)` umbenennt,
-- ein neues Objekt zurückgibt (keine In-Place-Mutation),
-- das Beispiel korrekt löst.
+GPT-4o liefert eine korrekte rekursive Funktion. Standardmuster: Typunterscheidung dict/list/primitiv, Key-Lookup per `mapping.get(key, key)`, neues Objekt statt In-Place-Mutation.
 
 ### Erfolgskriterien
 
 - Korrekte Rekursion über verschachtelte Dicts und Listen.
 - Kein Seiteneffekt auf das Eingabeobjekt.
-- Das Beispiel liefert exakt `{"full_name": "Alice", "address": {"town": "Berlin"}}`.
+- Beispiel liefert exakt `{"full_name": "Alice", "address": {"town": "Berlin"}}`.
 
 ---
 
@@ -59,12 +55,9 @@ Beispiel:
   → {"full_name": "ALICE", "age": 29.7, "address": {"town": "Ber"}}
 ```
 
-### Erwartete Wirkung
+### Erwartung
 
-GPT-4o erweitert die bestehende Funktion korrekt:
-- Remapping wird zuerst angewendet, dann Transform auf den neuen Key.
-- Transforms greifen nur bei Blatt-Werten (str, int, float, bool, None).
-- Verschachtelte Strukturen werden weiterhin korrekt rekursiv verarbeitet.
+Saubere Erweiterung von Turn 1. Erst Remapping, dann Transform-Lookup auf den neuen Key. Transforms nur auf Blatt-Werte, nicht auf verschachtelte Strukturen.
 
 ### Erfolgskriterien
 
@@ -151,59 +144,31 @@ wo eine spezifischere Regel existiert. Sie würde nur greifen, wenn es ein Dict 
 auf das keine andere Regel passt.
 ```
 
-### Erwartete Wirkung (Modellversagen)
+### Erwartung: Modellversagen
 
-GPT-4o wird mit hoher Wahrscheinlichkeit an der Kombination mehrerer Anforderungen scheitern:
+GPT-4o scheitert hier an der Kombination mehrerer Anforderungen, die einzeln jeweils lösbar wären:
 
-1. **Pfad-Tracking durch die Rekursion:** Der aktuelle Pfad muss bei jedem rekursiven
-   Abstieg korrekt mitgeführt werden. Bei Listen muss der Pfad den Listen-Key enthalten,
-   aber die Liste selbst nicht als Pfad-Segment zählen (die Dicts IN der Liste matchen
-   auf "tags.*", nicht auf "tags.0" oder "tags.list.*").
+1. **Pfad-Tracking durch die Rekursion.** Der aktuelle Pfad muss bei jedem Abstieg korrekt mitgeführt werden. Bei Listen muss der Pfad den Listen-Key enthalten, aber die Liste selbst darf kein eigenes Pfad-Segment erzeugen. Dicts innerhalb von Listen matchen auf `"tags.*"`, nicht auf `"tags.0"`.
 
-2. **Wildcard-Matching mit Spezifitäts-Vorrang:** Das Modell muss für jedes Dict alle
-   matchenden Regeln finden, dann nach Spezifität sortieren (wenigste Wildcards gewinnt),
-   und nur die Gewinner-Regel anwenden. GPT-4o implementiert häufig entweder:
-   - alle matchenden Regeln kumulativ (statt nur die spezifischste), oder
-   - die erste matchende Regel (statt die spezifischste), oder
-   - Wildcards falsch (z.B. "*" matcht mehrere Ebenen, oder "**" wird nicht korrekt
-     als "null oder mehr Ebenen" implementiert).
+2. **Wildcard-Matching mit Spezifitäts-Vorrang.** Für jedes Dict müssen alle matchenden Regeln gefunden und nach Spezifität sortiert werden. Nur die spezifischste Regel wird angewendet. GPT-4o implementiert stattdessen typischerweise entweder alle Regeln kumulativ, die erste matchende Regel, oder fehlerhaftes Wildcard-Matching.
 
-3. **"**"-Globbing:** Die Doppel-Wildcard "**" muss null oder mehr Ebenen matchen.
-   Das bedeutet, sie matcht auf JEDES Dict im Baum. GPT-4o implementiert "**" häufig
-   als "genau eine oder mehr Ebenen" und vergisst den Null-Fall (Top-Level).
+3. **`**`-Globbing.** Die Doppel-Wildcard muss null oder mehr Ebenen matchen – also auch das Top-Level-Dict. GPT-4o implementiert `**` häufig als „eine oder mehr Ebenen" und vergisst den Null-Fall.
 
 ### Objektive Fehleranzeichen
 
-- `"key"/"value"` statt `"tag_key"/"tag_value"` in den Tags (Spezifität von "tags.*"
-  nicht erkannt, "**" gewinnt fälschlich)
-- `"key"/"value"` statt `"k"/"v"` UND statt `"tag_key"/"tag_value"` (Wildcards
-  funktionieren gar nicht)
-- `"lat"/"lon"` statt `"latitude"/"longitude"` (Pfad "address.geo" nicht korrekt gematcht)
+- `"key"/"value"` statt `"tag_key"/"tag_value"` in den Tags → Spezifität von `"tags.*"` nicht erkannt
+- `"lat"/"lon"` statt `"latitude"/"longitude"` → Pfad `"address.geo"` nicht korrekt gematcht
 - Transforms nicht angewendet oder auf falsche Keys angewendet
 - Crash bei Listen-Traversierung
 
 ---
 
-## Identifizierte Modellgrenze
+## Modellgrenze
 
-**Pfad-basiertes Pattern-Matching mit Spezifitäts-Vorrang in rekursiver Baumtransformation.**
+**Pfadbasiertes Pattern-Matching mit Spezifitäts-Vorrang in rekursiver Baumtransformation.**
 
-GPT-4o kann einfache rekursive Transformationen und einfaches Pattern-Matching separat gut
-implementieren. Die Kombination von:
-- Pfad-Tracking durch verschachtelte Dicts und Listen,
-- Wildcard-Matching mit "*" und "**",
-- Spezifitäts-basierter Regelauswahl (nicht erste, nicht alle, sondern spezifischste),
-- korrekte Behandlung von Listen (Pfad geht durch, aber Liste ist kein Pfad-Segment)
+GPT-4o kann einfache rekursive Transformationen und einfaches Pattern-Matching jeweils gut umsetzen. Die Kombination aus Pfad-Tracking durch verschachtelte Dicts und Listen, Wildcard-Matching mit `*` und `**`, spezifitätsbasierter Regelauswahl und korrekter Listen-Behandlung überfordert das Modell. Es löst typischerweise ein oder zwei dieser Constraints korrekt, aber nicht alle gleichzeitig.
 
-überfordert das Modell typischerweise. Es löst ein oder zwei der Constraints korrekt,
-aber nicht alle gleichzeitig.
+**Warum Turn 1 und 2 nicht betroffen sind:** Beide verwenden ein einziges globales Mapping ohne Pfad-Tracking. Kein Wildcard-Matching, keine Regelauswahl.
 
-**Warum Turn 1 und Turn 2 nicht betroffen sind:**
-- Turn 1: Ein einziges globales Mapping, kein Pfad-Tracking.
-- Turn 2: Ein einziges globales Mapping + einfache Transforms. Kein Pfad-Tracking.
-
-**Was sich in Turn 3 ändert:**
-- Mappings werden pfadabhängig mit Wildcards.
-- Spezifitäts-Vorrang erfordert Vergleich aller matchenden Regeln.
-- Listen erfordern spezielle Pfad-Behandlung.
-- "**" erfordert korrektes Globbing über null oder mehr Ebenen.
+**Was sich in Turn 3 ändert:** Mappings werden pfadabhängig. Wildcards erfordern Pattern-Matching. Mehrere Regeln können auf dasselbe Dict matchen, und nur die spezifischste darf gewinnen. Listen erfordern spezielle Pfad-Behandlung.
