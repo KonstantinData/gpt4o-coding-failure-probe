@@ -75,71 +75,135 @@ GPT-4o erweitert die bestehende Funktion korrekt:
 
 ---
 
-## Turn 3 – Zirkuläres Key-Remapping in einem Durchlauf
+## Turn 3 – Pfadbasierte Regeln mit Wildcards und Spezifitäts-Vorrang
 
 ### User-Prompt
 
 ```
-Jetzt ein anspruchsvollerer Fall. Ändere `remap_and_transform` so, dass auch zirkuläre
-Mappings korrekt funktionieren.
+Letzte Erweiterung. Ändere die Signatur zu:
 
-Mit "zirkulär" meine ich: Das Mapping kann Zyklen enthalten, z.B. {"a": "b", "b": "c", "c": "a"}.
-Jeder Key muss exakt einmal umbenannt werden, basierend auf dem URSPRÜNGLICHEN Key-Namen im
-Input-Objekt – nicht basierend auf einem Zustand, der durch bereits umbenannte Geschwister-Keys
-in derselben Dict-Ebene entsteht.
+  remap_and_transform(obj, rules, transforms)
 
-Konkret: Wenn ein Dict {"a": 1, "b": 2, "c": 3} mit Mapping {"a": "b", "b": "c", "c": "a"}
-verarbeitet wird, muss das Ergebnis {"b": 1, "c": 2, "a": 3} sein.
+`rules` ist jetzt eine Liste von Pfad-basierten Regeln. Jede Regel hat die Form:
+  {"path": "<pfad-pattern>", "mapping": <dict>}
 
-Es darf NICHT passieren, dass "a" zuerst zu "b" wird und dann das Mapping für "b" → "c"
-erneut greift. Jeder Key wird genau einmal transformiert, basierend auf seinem Original-Namen.
+Ein Pfad-Pattern beschreibt, WO im Objekt das Mapping angewendet wird:
+- "." bedeutet: auf das Top-Level-Dict
+- "address" bedeutet: auf das Dict, das unter dem Key "address" liegt
+- "address.geo" bedeutet: auf das Dict unter "address" → "geo"
+- "*" ist ein Wildcard und matcht EINEN beliebigen Key auf dieser Ebene
+- "**" matcht NULL ODER MEHR Ebenen (wie bei Glob-Patterns)
 
-Behalte die `transforms`-Funktionalität bei. Transforms beziehen sich weiterhin auf die
-NEUEN Key-Namen nach dem Remapping.
+Spezifitäts-Regel: Wenn mehrere Regeln auf dasselbe Dict matchen, gewinnt die
+SPEZIFISCHSTE Regel (die mit den wenigsten Wildcards). Bei Gleichstand gewinnt
+die Regel, die in der Liste ZUERST steht. Es wird pro Dict nur EINE Regel angewendet
+(die Gewinner-Regel), nicht mehrere.
+
+`transforms` funktioniert wie bisher.
 
 Teste mit:
-  remap_and_transform(
-      {"a": 1, "b": 2, "c": 3, "nested": {"a": 10, "b": 20}},
-      {"a": "b", "b": "c", "c": "a"},
-      {"b": lambda x: x * 100}
-  )
-  Erwartetes Ergebnis:
-  {"b": 100, "c": 2, "a": 3, "nested": {"b": 1000, "c": 20}}
+  data = {
+      "id": 1,
+      "name": "Alice",
+      "address": {
+          "city": "Berlin",
+          "geo": {"lat": 52.52, "lon": 13.405}
+      },
+      "tags": [
+          {"key": "role", "value": "admin"},
+          {"key": "dept", "value": "engineering"}
+      ]
+  }
 
-Erkläre kurz, wie dein Code sicherstellt, dass kein Key doppelt umbenannt wird.
+  rules = [
+      {"path": "**",          "mapping": {"key": "k", "value": "v"}},
+      {"path": ".",           "mapping": {"name": "full_name", "id": "identifier"}},
+      {"path": "address",     "mapping": {"city": "town"}},
+      {"path": "address.geo", "mapping": {"lat": "latitude", "lon": "longitude"}},
+      {"path": "tags.*",      "mapping": {"key": "tag_key", "value": "tag_value"}}
+  ]
+
+  transforms = {
+      "full_name": str.upper,
+      "town": lambda s: s[:3],
+      "latitude": str,
+      "longitude": str
+  }
+
+  remap_and_transform(data, rules, transforms)
+
+Erwartetes Ergebnis:
+  {
+      "identifier": 1,
+      "full_name": "ALICE",
+      "address": {
+          "town": "Ber",
+          "geo": {"latitude": "52.52", "longitude": "13.405"}
+      },
+      "tags": [
+          {"tag_key": "role", "tag_value": "admin"},
+          {"tag_key": "dept", "tag_value": "engineering"}
+      ]
+  }
+
+Beachte: Die "**"-Regel matcht zwar auf alle Dicts, aber sie verliert überall dort,
+wo eine spezifischere Regel existiert. Sie würde nur greifen, wenn es ein Dict gäbe,
+auf das keine andere Regel passt.
 ```
 
 ### Erwartete Wirkung (Modellversagen)
 
-GPT-4o wird mit hoher Wahrscheinlichkeit Code erzeugen, der eines der folgenden Probleme zeigt:
+GPT-4o wird mit hoher Wahrscheinlichkeit an der Kombination mehrerer Anforderungen scheitern:
 
-1. **Sequenzielles Remapping:** Der Code iteriert über die Dict-Items und benennt Keys nacheinander um. Bei zirkulären Mappings führt das zu Doppel-Remappings (z.B. `a→b→c` statt `a→b`).
+1. **Pfad-Tracking durch die Rekursion:** Der aktuelle Pfad muss bei jedem rekursiven
+   Abstieg korrekt mitgeführt werden. Bei Listen muss der Pfad den Listen-Key enthalten,
+   aber die Liste selbst nicht als Pfad-Segment zählen (die Dicts IN der Liste matchen
+   auf "tags.*", nicht auf "tags.0" oder "tags.list.*").
 
-2. **Falsches Snapshot-Verständnis:** Der Code erstellt zwar ein neues Dict, verwendet aber eine Iteration, die den Mapping-Lookup auf bereits umbenannte Keys anwendet.
+2. **Wildcard-Matching mit Spezifitäts-Vorrang:** Das Modell muss für jedes Dict alle
+   matchenden Regeln finden, dann nach Spezifität sortieren (wenigste Wildcards gewinnt),
+   und nur die Gewinner-Regel anwenden. GPT-4o implementiert häufig entweder:
+   - alle matchenden Regeln kumulativ (statt nur die spezifischste), oder
+   - die erste matchende Regel (statt die spezifischste), oder
+   - Wildcards falsch (z.B. "*" matcht mehrere Ebenen, oder "**" wird nicht korrekt
+     als "null oder mehr Ebenen" implementiert).
 
-3. **Korrekte Idee, fehlerhafte Umsetzung:** Der Code beschreibt in der Erklärung korrekt, dass ein Snapshot nötig ist, implementiert aber trotzdem eine sequenzielle Variante – oder vergisst, das Snapshot-Prinzip auf verschachtelte Ebenen anzuwenden.
+3. **"**"-Globbing:** Die Doppel-Wildcard "**" muss null oder mehr Ebenen matchen.
+   Das bedeutet, sie matcht auf JEDES Dict im Baum. GPT-4o implementiert "**" häufig
+   als "genau eine oder mehr Ebenen" und vergisst den Null-Fall (Top-Level).
 
 ### Objektive Fehleranzeichen
 
-Das Ergebnis weicht vom erwarteten Output ab:
-- `{"b": 100, "c": 2, "a": 3, "nested": {"b": 1000, "c": 20}}` ist korrekt.
-- Jede Abweichung (z.B. `"a"` landet bei `"c"`, oder Transform wird auf falschen Key angewendet) zeigt das Versagen.
+- `"key"/"value"` statt `"tag_key"/"tag_value"` in den Tags (Spezifität von "tags.*"
+  nicht erkannt, "**" gewinnt fälschlich)
+- `"key"/"value"` statt `"k"/"v"` UND statt `"tag_key"/"tag_value"` (Wildcards
+  funktionieren gar nicht)
+- `"lat"/"lon"` statt `"latitude"/"longitude"` (Pfad "address.geo" nicht korrekt gematcht)
+- Transforms nicht angewendet oder auf falsche Keys angewendet
+- Crash bei Listen-Traversierung
 
 ---
 
 ## Identifizierte Modellgrenze
 
-**Simultanes vs. sequenzielles Zustandsupdate bei zirkulären Abhängigkeiten.**
+**Pfad-basiertes Pattern-Matching mit Spezifitäts-Vorrang in rekursiver Baumtransformation.**
 
-GPT-4o denkt bei Dictionary-Transformationen standardmäßig sequenziell: "Iteriere über Items, wende Regel an, schreibe Ergebnis." Bei nicht-zirkulären Mappings ist das korrekt. Bei zirkulären Mappings muss jedoch ein *Snapshot* des Originalzustands als Basis dienen – alle Keys müssen basierend auf ihrem *ursprünglichen* Namen transformiert werden, nicht basierend auf dem Zustand, der durch vorherige Umbenennungen in derselben Iteration entstanden ist.
+GPT-4o kann einfache rekursive Transformationen und einfaches Pattern-Matching separat gut
+implementieren. Die Kombination von:
+- Pfad-Tracking durch verschachtelte Dicts und Listen,
+- Wildcard-Matching mit "*" und "**",
+- Spezifitäts-basierter Regelauswahl (nicht erste, nicht alle, sondern spezifischste),
+- korrekte Behandlung von Listen (Pfad geht durch, aber Liste ist kein Pfad-Segment)
 
-Diese Grenze ist analog zu:
-- Cellular Automata (alle Zellen gleichzeitig updaten, nicht sequenziell),
-- Datenbank-Transaktionen (Read-Snapshot vs. Dirty-Read),
-- Parallele Variablen-Swaps ohne Temp-Variable.
+überfordert das Modell typischerweise. Es löst ein oder zwei der Constraints korrekt,
+aber nicht alle gleichzeitig.
 
 **Warum Turn 1 und Turn 2 nicht betroffen sind:**
-In Turn 1 und Turn 2 sind die Mappings nicht-zirkulär. Sequenzielles Remapping liefert dort das korrekte Ergebnis, weil kein Key auf einen anderen Key im selben Dict abgebildet wird, der ebenfalls umbenannt werden soll.
+- Turn 1: Ein einziges globales Mapping, kein Pfad-Tracking.
+- Turn 2: Ein einziges globales Mapping + einfache Transforms. Kein Pfad-Tracking.
 
 **Was sich in Turn 3 ändert:**
-Das Mapping enthält einen Zyklus (`a→b→c→a`). Dadurch wird die Reihenfolge der Iteration relevant – und sequenzielles Remapping produziert falsche Ergebnisse.
+- Mappings werden pfadabhängig mit Wildcards.
+- Spezifitäts-Vorrang erfordert Vergleich aller matchenden Regeln.
+- Listen erfordern spezielle Pfad-Behandlung.
+- "**" erfordert korrektes Globbing über null oder mehr Ebenen.

@@ -42,34 +42,85 @@ conversation designed in `conversation_design.md`.
 
 ---
 
-## Turn 3 – Cyclic Key Remapping (Failure Trigger)
+## Turn 3 – Path-Based Rules with Wildcards and Specificity Precedence (Failure Trigger)
 
 **User prompt:**
 
-> Now a more challenging case. Modify `remap_and_transform` so that cyclic
-> mappings work correctly.
+> Final extension. Change the signature to:
 >
-> By "cyclic" I mean: the mapping can contain cycles, e.g.
-> `{"a": "b", "b": "c", "c": "a"}`. Each key must be renamed exactly once,
-> based on the ORIGINAL key name in the input object – not based on a state
-> created by already-renamed sibling keys at the same dict level.
+>   `remap_and_transform(obj, rules, transforms)`
 >
-> Specifically: if a dict `{"a": 1, "b": 2, "c": 3}` is processed with mapping
-> `{"a": "b", "b": "c", "c": "a"}`, the result must be `{"b": 1, "c": 2, "a": 3}`.
+> `rules` is now a list of path-based rules. Each rule has the form:
+>   `{"path": "<path-pattern>", "mapping": <dict>}`
 >
-> It must NOT happen that "a" is first renamed to "b" and then the mapping for
-> "b" → "c" fires again. Each key is transformed exactly once, based on its
-> original name.
+> A path pattern describes WHERE in the object the mapping is applied:
+> - `"."` means: the top-level dict
+> - `"address"` means: the dict nested under key "address"
+> - `"address.geo"` means: the dict under "address" → "geo"
+> - `"*"` is a wildcard matching ONE arbitrary key at that level
+> - `"**"` matches ZERO OR MORE levels (like glob patterns)
 >
-> Keep the `transforms` functionality. Transforms still refer to the NEW key
-> names after remapping.
+> Specificity rule: When multiple rules match the same dict, the MOST SPECIFIC
+> rule wins (the one with the fewest wildcards). On a tie, the rule that appears
+> FIRST in the list wins. Only ONE rule (the winner) is applied per dict, not
+> multiple.
+>
+> `transforms` works as before.
 >
 > Test with:
->   `remap_and_transform({"a": 1, "b": 2, "c": 3, "nested": {"a": 10, "b": 20}}, {"a": "b", "b": "c", "c": "a"}, {"b": lambda x: x * 100})`
->   Expected result:
->   `{"b": 100, "c": 2, "a": 3, "nested": {"b": 1000, "c": 20}}`
+> ```python
+> data = {
+>     "id": 1,
+>     "name": "Alice",
+>     "address": {
+>         "city": "Berlin",
+>         "geo": {"lat": 52.52, "lon": 13.405}
+>     },
+>     "tags": [
+>         {"key": "role", "value": "admin"},
+>         {"key": "dept", "value": "engineering"}
+>     ]
+> }
 >
-> Briefly explain how your code ensures that no key is renamed twice.
+> rules = [
+>     {"path": "**",          "mapping": {"key": "k", "value": "v"}},
+>     {"path": ".",           "mapping": {"name": "full_name", "id": "identifier"}},
+>     {"path": "address",     "mapping": {"city": "town"}},
+>     {"path": "address.geo", "mapping": {"lat": "latitude", "lon": "longitude"}},
+>     {"path": "tags.*",      "mapping": {"key": "tag_key", "value": "tag_value"}}
+> ]
+>
+> transforms = {
+>     "full_name": str.upper,
+>     "town": lambda s: s[:3],
+>     "latitude": str,
+>     "longitude": str
+> }
+>
+> remap_and_transform(data, rules, transforms)
+> ```
+>
+> Expected result:
+> ```json
+> {
+>     "identifier": 1,
+>     "full_name": "ALICE",
+>     "address": {
+>         "town": "Ber",
+>         "geo": {"latitude": "52.52", "longitude": "13.405"}
+>     },
+>     "tags": [
+>         {"tag_key": "role", "tag_value": "admin"},
+>         {"tag_key": "dept", "tag_value": "engineering"}
+>     ]
+> }
+> ```
+>
+> Note: The `"**"` rule matches all dicts, but it loses wherever a more specific
+> rule exists. It would only apply to a dict that no other rule matches.
 
-**Expected outcome:** Failure. The model typically generates sequential
-remapping code that double-remaps keys in cyclic chains.
+**Expected outcome:** Failure. The model typically fails on one or more of:
+- Path tracking through lists (list items need a wildcard path segment for `tags.*` to match)
+- `**` glob matching zero or more levels (often implemented as one-or-more)
+- Specificity-based rule selection (often applies first match or all matches instead of most specific)
+- Interaction between specificity selection and transforms

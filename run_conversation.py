@@ -1,11 +1,10 @@
 """Send the 3-turn conversation to GPT-4o via OpenRouter and export the full interaction.
 
 Produces:
-  openrouter_interaction.json  – complete chat with all GPT-4o responses
-  _turn3_extracted.py          – extracted Turn-3 code for verification
+  openrouter_interaction.json  – complete chat with all GPT-4o responses + verification
 
 Usage:
-    set OPENROUTER_API_KEY=<your-key>
+    set OPENROUTER_API_KEY=<your-key>      (or create .env from .env.example)
     python run_conversation.py
 """
 
@@ -14,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.request import Request, urlopen
 
-# Load .env if present (no external dependency needed)
+# Load .env if present
 _env = Path(__file__).with_name(".env")
 if _env.exists():
     for line in _env.read_text().splitlines():
@@ -32,14 +31,107 @@ MODEL = "openai/gpt-4o"
 
 PROMPTS = [
     # Turn 1
-    'Schreibe eine Python-Funktion `remap_keys(obj, mapping)`, die ein beliebig tief verschachteltes JSON-kompatibles Objekt (dicts, lists, primitive Werte) rekursiv durchläuft und alle Dictionary-Keys gemäß dem `mapping`-Dict umbenennt. Keys, die nicht im Mapping vorkommen, bleiben unverändert. Die Funktion soll ein neues Objekt zurückgeben, ohne das Original zu verändern.\n\nBeispiel:\n  remap_keys({"name": "Alice", "address": {"city": "Berlin"}}, {"name": "full_name", "city": "town"})\n  → {"full_name": "Alice", "address": {"town": "Berlin"}}',
+    (
+        'Schreibe eine Python-Funktion `remap_keys(obj, mapping)`, die ein beliebig tief '
+        'verschachteltes JSON-kompatibles Objekt (dicts, lists, primitive Werte) rekursiv '
+        'durchläuft und alle Dictionary-Keys gemäß dem `mapping`-Dict umbenennt. Keys, die '
+        'nicht im Mapping vorkommen, bleiben unverändert. Die Funktion soll ein neues Objekt '
+        'zurückgeben, ohne das Original zu verändern.\n\n'
+        'Beispiel:\n'
+        '  remap_keys({"name": "Alice", "address": {"city": "Berlin"}}, '
+        '{"name": "full_name", "city": "town"})\n'
+        '  → {"full_name": "Alice", "address": {"town": "Berlin"}}'
+    ),
     # Turn 2
-    'Erweitere die Funktion zu `remap_and_transform(obj, mapping, transforms)`.\n\nDer neue Parameter `transforms` ist ein Dict, das Ziel-Key-Namen (also die NEUEN Namen nach dem Remapping) auf Transformationsfunktionen abbildet. Wenn ein Key nach dem Remapping einen Eintrag in `transforms` hat, wird die zugehörige Funktion auf den Wert angewendet (nur auf Blatt-Werte, nicht auf verschachtelte Dicts/Listen).\n\nBeispiel:\n  remap_and_transform(\n      {"name": "Alice", "age": 29.7, "address": {"city": "Berlin"}},\n      {"name": "full_name", "city": "town"},\n      {"full_name": str.upper, "town": lambda s: s[:3]}\n  )\n  → {"full_name": "ALICE", "age": 29.7, "address": {"town": "Ber"}}',
+    (
+        'Erweitere die Funktion zu `remap_and_transform(obj, mapping, transforms)`.\n\n'
+        'Der neue Parameter `transforms` ist ein Dict, das Ziel-Key-Namen (also die NEUEN '
+        'Namen nach dem Remapping) auf Transformationsfunktionen abbildet. Wenn ein Key nach '
+        'dem Remapping einen Eintrag in `transforms` hat, wird die zugehörige Funktion auf '
+        'den Wert angewendet (nur auf Blatt-Werte, nicht auf verschachtelte Dicts/Listen).\n\n'
+        'Beispiel:\n'
+        '  remap_and_transform(\n'
+        '      {"name": "Alice", "age": 29.7, "address": {"city": "Berlin"}},\n'
+        '      {"name": "full_name", "city": "town"},\n'
+        '      {"full_name": str.upper, "town": lambda s: s[:3]}\n'
+        '  )\n'
+        '  → {"full_name": "ALICE", "age": 29.7, "address": {"town": "Ber"}}'
+    ),
     # Turn 3
-    'Jetzt ein anspruchsvollerer Fall. Ändere `remap_and_transform` so, dass auch zirkuläre Mappings korrekt funktionieren.\n\nMit "zirkulär" meine ich: Das Mapping kann Zyklen enthalten, z.B. {"a": "b", "b": "c", "c": "a"}. Jeder Key muss exakt einmal umbenannt werden, basierend auf dem URSPRÜNGLICHEN Key-Namen im Input-Objekt – nicht basierend auf einem Zustand, der durch bereits umbenannte Geschwister-Keys in derselben Dict-Ebene entsteht.\n\nKonkret: Wenn ein Dict {"a": 1, "b": 2, "c": 3} mit Mapping {"a": "b", "b": "c", "c": "a"} verarbeitet wird, muss das Ergebnis {"b": 1, "c": 2, "a": 3} sein.\n\nEs darf NICHT passieren, dass "a" zuerst zu "b" wird und dann das Mapping für "b" → "c" erneut greift. Jeder Key wird genau einmal transformiert, basierend auf seinem Original-Namen.\n\nBehalte die `transforms`-Funktionalität bei. Transforms beziehen sich weiterhin auf die NEUEN Key-Namen nach dem Remapping.\n\nTeste mit:\n  remap_and_transform(\n      {"a": 1, "b": 2, "c": 3, "nested": {"a": 10, "b": 20}},\n      {"a": "b", "b": "c", "c": "a"},\n      {"b": lambda x: x * 100}\n  )\n  Erwartetes Ergebnis:\n  {"b": 100, "c": 2, "a": 3, "nested": {"b": 1000, "c": 20}}\n\nErkläre kurz, wie dein Code sicherstellt, dass kein Key doppelt umbenannt wird.',
+    (
+        'Letzte Erweiterung. Ändere die Signatur zu:\n\n'
+        '  remap_and_transform(obj, rules, transforms)\n\n'
+        '`rules` ist jetzt eine Liste von Pfad-basierten Regeln. Jede Regel hat die Form:\n'
+        '  {"path": "<pfad-pattern>", "mapping": <dict>}\n\n'
+        'Ein Pfad-Pattern beschreibt, WO im Objekt das Mapping angewendet wird:\n'
+        '- "." bedeutet: auf das Top-Level-Dict\n'
+        '- "address" bedeutet: auf das Dict, das unter dem Key "address" liegt\n'
+        '- "address.geo" bedeutet: auf das Dict unter "address" → "geo"\n'
+        '- "*" ist ein Wildcard und matcht EINEN beliebigen Key auf dieser Ebene\n'
+        '- "**" matcht NULL ODER MEHR Ebenen (wie bei Glob-Patterns)\n\n'
+        'Spezifitäts-Regel: Wenn mehrere Regeln auf dasselbe Dict matchen, gewinnt die '
+        'SPEZIFISCHSTE Regel (die mit den wenigsten Wildcards). Bei Gleichstand gewinnt '
+        'die Regel, die in der Liste ZUERST steht. Es wird pro Dict nur EINE Regel angewendet '
+        '(die Gewinner-Regel), nicht mehrere.\n\n'
+        '`transforms` funktioniert wie bisher.\n\n'
+        'Teste mit:\n'
+        '  data = {\n'
+        '      "id": 1,\n'
+        '      "name": "Alice",\n'
+        '      "address": {\n'
+        '          "city": "Berlin",\n'
+        '          "geo": {"lat": 52.52, "lon": 13.405}\n'
+        '      },\n'
+        '      "tags": [\n'
+        '          {"key": "role", "value": "admin"},\n'
+        '          {"key": "dept", "value": "engineering"}\n'
+        '      ]\n'
+        '  }\n\n'
+        '  rules = [\n'
+        '      {"path": "**",          "mapping": {"key": "k", "value": "v"}},\n'
+        '      {"path": ".",           "mapping": {"name": "full_name", "id": "identifier"}},\n'
+        '      {"path": "address",     "mapping": {"city": "town"}},\n'
+        '      {"path": "address.geo", "mapping": {"lat": "latitude", "lon": "longitude"}},\n'
+        '      {"path": "tags.*",      "mapping": {"key": "tag_key", "value": "tag_value"}}\n'
+        '  ]\n\n'
+        '  transforms = {\n'
+        '      "full_name": str.upper,\n'
+        '      "town": lambda s: s[:3],\n'
+        '      "latitude": str,\n'
+        '      "longitude": str\n'
+        '  }\n\n'
+        '  remap_and_transform(data, rules, transforms)\n\n'
+        'Erwartetes Ergebnis:\n'
+        '  {\n'
+        '      "identifier": 1,\n'
+        '      "full_name": "ALICE",\n'
+        '      "address": {\n'
+        '          "town": "Ber",\n'
+        '          "geo": {"latitude": "52.52", "longitude": "13.405"}\n'
+        '      },\n'
+        '      "tags": [\n'
+        '          {"tag_key": "role", "tag_value": "admin"},\n'
+        '          {"tag_key": "dept", "tag_value": "engineering"}\n'
+        '      ]\n'
+        '  }\n\n'
+        'Beachte: Die "**"-Regel matcht zwar auf alle Dicts, aber sie verliert überall dort, '
+        'wo eine spezifischere Regel existiert. Sie würde nur greifen, wenn es ein Dict gäbe, '
+        'auf das keine andere Regel passt.'
+    ),
 ]
 
-EXPECTED_T3 = {"b": 100, "c": 2, "a": 3, "nested": {"b": 1000, "c": 20}}
+EXPECTED_T3 = {
+    "identifier": 1,
+    "full_name": "ALICE",
+    "address": {
+        "town": "Ber",
+        "geo": {"latitude": "52.52", "longitude": "13.405"},
+    },
+    "tags": [
+        {"tag_key": "role", "tag_value": "admin"},
+        {"tag_key": "dept", "tag_value": "engineering"},
+    ],
+}
 
 
 def chat(messages):
@@ -52,8 +144,7 @@ def chat(messages):
         with urlopen(req) as resp:
             return json.loads(resp.read())["choices"][0]["message"]["content"]
     except Exception as e:
-        # Print response body for debugging
-        if hasattr(e, 'read'):
+        if hasattr(e, "read"):
             print(f"API error: {e.read().decode()}", file=sys.stderr)
         raise
 
@@ -71,7 +162,7 @@ export = {
         "model": MODEL,
         "provider": "openrouter",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "task": "recursive-json-key-remapping-cyclic-failure-probe",
+        "task": "recursive-json-key-remapping-path-wildcards-specificity",
     },
     "turns": [],
 }
@@ -83,11 +174,7 @@ for i, prompt in enumerate(PROMPTS, 1):
     reply = chat(history)
     history.append({"role": "assistant", "content": reply})
 
-    export["turns"].append({
-        "turn": i,
-        "user": prompt,
-        "assistant": reply,
-    })
+    export["turns"].append({"turn": i, "user": prompt, "assistant": reply})
     print(reply[:2000] + ("\n[…truncated]" if len(reply) > 2000 else ""))
 
 # ── Verify Turn 3 ───────────────────────────────────────────────────
@@ -97,9 +184,31 @@ test_code = code + textwrap.dedent("""
 
 # --- automated verification ---
 _result = remap_and_transform(
-    {"a": 1, "b": 2, "c": 3, "nested": {"a": 10, "b": 20}},
-    {"a": "b", "b": "c", "c": "a"},
-    {"b": lambda x: x * 100},
+    {
+        "id": 1,
+        "name": "Alice",
+        "address": {
+            "city": "Berlin",
+            "geo": {"lat": 52.52, "lon": 13.405}
+        },
+        "tags": [
+            {"key": "role", "value": "admin"},
+            {"key": "dept", "value": "engineering"}
+        ]
+    },
+    [
+        {"path": "**",          "mapping": {"key": "k", "value": "v"}},
+        {"path": ".",           "mapping": {"name": "full_name", "id": "identifier"}},
+        {"path": "address",     "mapping": {"city": "town"}},
+        {"path": "address.geo", "mapping": {"lat": "latitude", "lon": "longitude"}},
+        {"path": "tags.*",      "mapping": {"key": "tag_key", "value": "tag_value"}}
+    ],
+    {
+        "full_name": str.upper,
+        "town": lambda s: s[:3],
+        "latitude": str,
+        "longitude": str
+    }
 )
 import json as _json
 print("ACTUAL:", _json.dumps(_result, sort_keys=True))
@@ -110,23 +219,30 @@ with open(tmp, "w", encoding="utf-8") as f:
     f.write(test_code)
 
 print(f"\n{'='*60}\nVerification\n{'='*60}")
-exit_code = os.system(f"{sys.executable} {tmp}")
 
-# Capture actual output for export
 proc = subprocess.run([sys.executable, tmp], capture_output=True, text=True)
+print(proc.stdout)
+if proc.stderr:
+    print("STDERR:", proc.stderr[:2000])
+
 actual_line = [l for l in proc.stdout.splitlines() if l.startswith("ACTUAL:")]
-actual = json.loads(actual_line[0].split("ACTUAL:")[1]) if actual_line else None
+if actual_line:
+    actual = json.loads(actual_line[0].split("ACTUAL:", 1)[1])
+else:
+    actual = None
+    print("WARNING: Could not extract output (code may have crashed)")
 
 passed = actual == EXPECTED_T3
+verdict = "PASS (model solved it)" if passed else "FAIL (failure mode confirmed)"
+print(f"\n{verdict}")
+
 export["verification"] = {
     "turn3_expected": EXPECTED_T3,
     "turn3_actual": actual,
     "turn3_pass": passed,
+    "turn3_stderr": proc.stderr[:2000] if proc.stderr else None,
+    "verdict": verdict,
 }
-
-verdict = "PASS ✅  (model solved cyclic case)" if passed else "FAIL ❌  (failure mode confirmed)"
-print(f"\n{verdict}")
-export["verification"]["verdict"] = verdict
 
 # ── Export ────────────────────────────────────────────────────────────
 
