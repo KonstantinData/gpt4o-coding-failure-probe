@@ -1,3 +1,6 @@
+# Generated runtime artifacts
+_turn3_extracted.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

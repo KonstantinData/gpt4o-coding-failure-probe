@@ -11,10 +11,12 @@ Recursive JSON key-remapping in Python with cyclic mapping chains as the failure
 | File | Content |
 |---|---|
 | `conversation_design.md` | Full conversation design with three turns, success criteria, and failure analysis (DE) |
-| `conversation.json` | Structured JSON chat file for reproducible testing |
-| `analysis_note_en.md` | English reference: task logic, failure mode, correct solution sketch |
+| `conversation.json` | Structured JSON conversation template for reproducible testing |
+| `conversation_en.md` | Complete English reference translation of all three prompts |
+| `analysis_note_en.md` | English analysis: task logic, failure mode, correct solution sketch |
 | `remap.py` | Executable reference implementation with assertions for all three turns |
-| `run_conversation.py` | Sends the 3-turn conversation to GPT-4o via OpenRouter and verifies Turn 3 output |
+| `run_conversation.py` | Sends the 3-turn conversation to GPT-4o via OpenRouter, verifies Turn 3, exports results |
+| `openrouter_interaction.json` | *(generated)* Exported full interaction with GPT-4o responses and verification |
 
 ## Usage
 
@@ -25,6 +27,7 @@ python remap.py
 # 2. Run the conversation against GPT-4o on OpenRouter
 set OPENROUTER_API_KEY=<your-key>
 python run_conversation.py
+# → produces openrouter_interaction.json with full GPT-4o responses + verification
 ```
 
 ## Failure Mode
