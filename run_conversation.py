@@ -9,13 +9,23 @@ Usage:
     python run_conversation.py
 """
 
-import json, os, re, sys, textwrap
+import json, os, re, subprocess, sys, textwrap
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.request import Request, urlopen
+
+# Load .env if present (no external dependency needed)
+_env = Path(__file__).with_name(".env")
+if _env.exists():
+    for line in _env.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip())
 
 API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 if not API_KEY:
-    sys.exit("ERROR: set OPENROUTER_API_KEY first.")
+    sys.exit("ERROR: set OPENROUTER_API_KEY or create a .env file (see .env.example).")
 
 URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "openai/gpt-4o"
@@ -38,8 +48,14 @@ def chat(messages):
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json",
     })
-    with urlopen(req) as resp:
-        return json.loads(resp.read())["choices"][0]["message"]["content"]
+    try:
+        with urlopen(req) as resp:
+            return json.loads(resp.read())["choices"][0]["message"]["content"]
+    except Exception as e:
+        # Print response body for debugging
+        if hasattr(e, 'read'):
+            print(f"API error: {e.read().decode()}", file=sys.stderr)
+        raise
 
 
 def extract_python(text):
@@ -97,7 +113,6 @@ print(f"\n{'='*60}\nVerification\n{'='*60}")
 exit_code = os.system(f"{sys.executable} {tmp}")
 
 # Capture actual output for export
-import subprocess
 proc = subprocess.run([sys.executable, tmp], capture_output=True, text=True)
 actual_line = [l for l in proc.stdout.splitlines() if l.startswith("ACTUAL:")]
 actual = json.loads(actual_line[0].split("ACTUAL:")[1]) if actual_line else None

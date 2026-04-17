@@ -1,3 +1,6 @@
+# Secrets
+.env
+
 # Generated runtime artifacts
 _turn3_extracted.py
 
