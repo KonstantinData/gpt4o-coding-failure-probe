@@ -3,7 +3,8 @@
     "model": "openai/gpt-4o",
     "provider": "openrouter",
     "task": "recursive-json-key-remapping",
-    "language": "de",
+    "prompt_language": "de",
+    "documentation_language": "en",
     "turns": 3,
     "expected_failure_turn": 3,
     "failure_mode": "path-wildcards-specificity-lists"

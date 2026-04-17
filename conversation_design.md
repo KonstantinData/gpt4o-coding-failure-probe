@@ -1,14 +1,14 @@
-# Conversation Design – Dreiturnige GPT-4o Coding-Interaktion
+# Conversation Design – Three-Turn GPT-4o Coding Interaction
 
-## Aufgabe
+## Task
 
-Rekursive Transformation verschachtelter JSON-Objekte in Python. Schlüssel-Umbenennung mit bedingter Wertmanipulation, aufsteigend bis zu pfadbasierten Regeln mit Platzhaltern.
+Recursive transformation of nested JSON objects in Python. Key remapping with conditional value manipulation, escalating to path-based rules with wildcards.
 
 ---
 
-## Turn 1 – Einfaches rekursives Schlüssel-Remapping
+## Turn 1 – Simple Recursive Key Remapping
 
-### User-Prompt
+### Prompt (sent in German)
 
 ```
 Schreibe eine Python-Funktion `remap_keys(obj, mapping)`, die ein beliebig tief verschachteltes
@@ -22,21 +22,21 @@ Beispiel:
   → {"full_name": "Alice", "address": {"town": "Berlin"}}
 ```
 
-### Erwartung
+### Expected Behavior
 
-GPT-4o liefert eine korrekte rekursive Funktion. Standardmuster: Typunterscheidung dict/list/primitiv, Schlüssel-Lookup per `mapping.get(key, key)`, neues Objekt statt Mutation am Original.
+GPT-4o produces a correct recursive function. Standard pattern: type dispatch on dict/list/primitive, key lookup via `mapping.get(key, key)`, new object instead of in-place mutation.
 
-### Erfolgskriterien
+### Success Criteria
 
-- Korrekte Rekursion über verschachtelte Dicts und Listen.
-- Kein Seiteneffekt auf das Eingabeobjekt.
-- Beispiel liefert exakt `{"full_name": "Alice", "address": {"town": "Berlin"}}`.
+- Correct recursion over nested dicts and lists.
+- No side effects on the input object.
+- Example produces exactly `{"full_name": "Alice", "address": {"town": "Berlin"}}`.
 
 ---
 
-## Turn 2 – Erweiterung um bedingte Wertmanipulation
+## Turn 2 – Adding Conditional Value Transforms
 
-### User-Prompt
+### Prompt (sent in German)
 
 ```
 Erweitere die Funktion zu `remap_and_transform(obj, mapping, transforms)`.
@@ -55,22 +55,22 @@ Beispiel:
   → {"full_name": "ALICE", "age": 29.7, "address": {"town": "Ber"}}
 ```
 
-### Erwartung
+### Expected Behavior
 
-Saubere Erweiterung von Turn 1. Erst Remapping, dann Transform-Lookup auf den neuen Schlüssel. Transforms nur auf Blatt-Werte, nicht auf verschachtelte Strukturen.
+Clean extension of Turn 1. Remap first, then transform lookup on the new key. Transforms apply only to leaf values, not to nested structures.
 
-### Erfolgskriterien
+### Success Criteria
 
 - `"name"` → `"full_name"` → `str.upper` → `"ALICE"` ✓
 - `"city"` → `"town"` → `lambda s: s[:3]` → `"Ber"` ✓
-- `"age"` bleibt `29.7` (kein Transform definiert) ✓
-- Kein Seiteneffekt, korrekte Rekursion.
+- `"age"` stays `29.7` (no transform defined) ✓
+- No side effects, correct recursion.
 
 ---
 
-## Turn 3 – Pfadbasierte Regeln mit Platzhaltern und Spezifitäts-Vorrang
+## Turn 3 – Path-Based Rules with Wildcards and Specificity Precedence
 
-### User-Prompt
+### Prompt (sent in German)
 
 ```
 Letzte Erweiterung. Ändere die Signatur zu:
@@ -144,31 +144,31 @@ wo eine spezifischere Regel existiert. Sie würde nur greifen, wenn es ein Dict 
 auf das keine andere Regel passt.
 ```
 
-### Erwartung: Modellversagen
+### Expected Behavior: Model Failure
 
-GPT-4o scheitert hier an der Kombination mehrerer Anforderungen, die einzeln jeweils lösbar wären:
+GPT-4o fails here on the combination of several requirements that would each be solvable in isolation:
 
-1. **Pfadverfolgung in der Rekursion.** Der aktuelle Pfad muss bei jedem Abstieg korrekt mitgeführt werden. Bei Listen muss der Pfad den Schlüssel der Liste enthalten, aber die Liste selbst darf kein eigenes Pfad-Segment erzeugen. Dicts innerhalb von Listen passen auf `"tags.*"`, nicht auf `"tags.0"`.
+1. **Path tracking through recursion.** The current path must be carried along at each descent. For lists, the path must include the list's key, but the list itself must not produce its own path segment. Dicts inside lists match `"tags.*"`, not `"tags.0"`.
 
-2. **Platzhalter-Abgleich mit Spezifitäts-Vorrang.** Für jedes Dict müssen alle passenden Regeln gefunden und nach Spezifität sortiert werden. Nur die spezifischste Regel wird angewendet. GPT-4o implementiert stattdessen typischerweise entweder alle Regeln kumulativ, die erste passende Regel, oder einen fehlerhaften Platzhalter-Abgleich.
+2. **Wildcard matching with specificity precedence.** For each dict, all matching rules must be found and sorted by specificity. Only the most specific rule is applied. GPT-4o typically implements either all rules cumulatively, the first matching rule, or broken wildcard matching.
 
-3. **`**` als Null-oder-mehr-Platzhalter.** Die Doppel-Wildcard muss null oder mehr Ebenen abdecken – also auch das oberste Dict. GPT-4o implementiert `**` häufig als „eine oder mehr Ebenen" und vergisst den Fall ohne Zwischenebene.
+3. **`**` as zero-or-more wildcard.** The double wildcard must cover zero or more levels — including the top-level dict. GPT-4o frequently implements `**` as "one or more levels" and misses the zero-length case.
 
-### Objektive Fehleranzeichen
+### Observable Failure Indicators
 
-- `"key"/"value"` statt `"tag_key"/"tag_value"` in den Tags → Spezifität von `"tags.*"` nicht erkannt
-- `"lat"/"lon"` statt `"latitude"/"longitude"` → Pfad `"address.geo"` nicht korrekt zugeordnet
-- Transforms nicht angewendet oder auf falsche Schlüssel angewendet
-- Absturz beim Durchlaufen von Listen
+- `"key"/"value"` instead of `"tag_key"/"tag_value"` in tags → specificity of `"tags.*"` not recognized
+- `"lat"/"lon"` instead of `"latitude"/"longitude"` → path `"address.geo"` not matched correctly
+- Transforms not applied or applied to wrong keys
+- Crash during list traversal
 
 ---
 
-## Modellgrenze
+## Model Limitation
 
-**Pfadbasierter Musterabgleich mit Spezifitäts-Vorrang in rekursiver Baumtransformation.**
+**Path-based pattern matching with specificity precedence inside a recursive tree transformation.**
 
-GPT-4o kann einfache rekursive Transformationen und einfachen Musterabgleich jeweils gut umsetzen. Die Kombination aus Pfadverfolgung durch verschachtelte Dicts und Listen, Platzhalter-Abgleich mit `*` und `**`, spezifitätsbasierter Regelauswahl und korrekter Sonderbehandlung von Listen überfordert das Modell. Es löst typischerweise eine oder zwei dieser Anforderungen korrekt, aber nicht alle gleichzeitig.
+GPT-4o handles simple recursive transformations and simple pattern matching well individually. The combination of path tracking through nested dicts and lists, wildcard matching with `*` and `**`, specificity-based rule selection, and correct special handling of lists overwhelms the model. It typically solves one or two of these requirements correctly, but not all at once.
 
-**Warum Turn 1 und 2 nicht betroffen sind:** Beide verwenden ein einziges globales Mapping ohne Pfadverfolgung. Kein Platzhalter-Abgleich, keine Regelauswahl.
+**Why Turns 1 and 2 are not affected:** Both use a single global mapping without path tracking. No wildcard matching, no rule selection.
 
-**Was sich in Turn 3 ändert:** Mappings werden pfadabhängig. Platzhalter erfordern Musterabgleich. Mehrere Regeln können auf dasselbe Dict passen, und nur die spezifischste darf greifen. Listen erfordern eine eigene Pfad-Behandlung.
+**What changes in Turn 3:** Mappings become path-dependent. Wildcards require pattern matching. Multiple rules can match the same dict, and only the most specific one may apply. Lists require their own path handling.
