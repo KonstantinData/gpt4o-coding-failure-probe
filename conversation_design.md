@@ -2,11 +2,11 @@
 
 ## Aufgabe
 
-Rekursive Transformation verschachtelter JSON-Objekte in Python. Key-Remapping mit bedingter Wertmanipulation, aufsteigend bis zu pfadbasierten Regeln mit Wildcards.
+Rekursive Transformation verschachtelter JSON-Objekte in Python. Schlüssel-Umbenennung mit bedingter Wertmanipulation, aufsteigend bis zu pfadbasierten Regeln mit Platzhaltern.
 
 ---
 
-## Turn 1 – Einfaches rekursives Key-Remapping
+## Turn 1 – Einfaches rekursives Schlüssel-Remapping
 
 ### User-Prompt
 
@@ -24,7 +24,7 @@ Beispiel:
 
 ### Erwartung
 
-GPT-4o liefert eine korrekte rekursive Funktion. Standardmuster: Typunterscheidung dict/list/primitiv, Key-Lookup per `mapping.get(key, key)`, neues Objekt statt In-Place-Mutation.
+GPT-4o liefert eine korrekte rekursive Funktion. Standardmuster: Typunterscheidung dict/list/primitiv, Schlüssel-Lookup per `mapping.get(key, key)`, neues Objekt statt Mutation am Original.
 
 ### Erfolgskriterien
 
@@ -57,7 +57,7 @@ Beispiel:
 
 ### Erwartung
 
-Saubere Erweiterung von Turn 1. Erst Remapping, dann Transform-Lookup auf den neuen Key. Transforms nur auf Blatt-Werte, nicht auf verschachtelte Strukturen.
+Saubere Erweiterung von Turn 1. Erst Remapping, dann Transform-Lookup auf den neuen Schlüssel. Transforms nur auf Blatt-Werte, nicht auf verschachtelte Strukturen.
 
 ### Erfolgskriterien
 
@@ -68,7 +68,7 @@ Saubere Erweiterung von Turn 1. Erst Remapping, dann Transform-Lookup auf den ne
 
 ---
 
-## Turn 3 – Pfadbasierte Regeln mit Wildcards und Spezifitäts-Vorrang
+## Turn 3 – Pfadbasierte Regeln mit Platzhaltern und Spezifitäts-Vorrang
 
 ### User-Prompt
 
@@ -148,27 +148,27 @@ auf das keine andere Regel passt.
 
 GPT-4o scheitert hier an der Kombination mehrerer Anforderungen, die einzeln jeweils lösbar wären:
 
-1. **Pfad-Tracking durch die Rekursion.** Der aktuelle Pfad muss bei jedem Abstieg korrekt mitgeführt werden. Bei Listen muss der Pfad den Listen-Key enthalten, aber die Liste selbst darf kein eigenes Pfad-Segment erzeugen. Dicts innerhalb von Listen matchen auf `"tags.*"`, nicht auf `"tags.0"`.
+1. **Pfadverfolgung in der Rekursion.** Der aktuelle Pfad muss bei jedem Abstieg korrekt mitgeführt werden. Bei Listen muss der Pfad den Schlüssel der Liste enthalten, aber die Liste selbst darf kein eigenes Pfad-Segment erzeugen. Dicts innerhalb von Listen passen auf `"tags.*"`, nicht auf `"tags.0"`.
 
-2. **Wildcard-Matching mit Spezifitäts-Vorrang.** Für jedes Dict müssen alle matchenden Regeln gefunden und nach Spezifität sortiert werden. Nur die spezifischste Regel wird angewendet. GPT-4o implementiert stattdessen typischerweise entweder alle Regeln kumulativ, die erste matchende Regel, oder fehlerhaftes Wildcard-Matching.
+2. **Platzhalter-Abgleich mit Spezifitäts-Vorrang.** Für jedes Dict müssen alle passenden Regeln gefunden und nach Spezifität sortiert werden. Nur die spezifischste Regel wird angewendet. GPT-4o implementiert stattdessen typischerweise entweder alle Regeln kumulativ, die erste passende Regel, oder einen fehlerhaften Platzhalter-Abgleich.
 
-3. **`**`-Globbing.** Die Doppel-Wildcard muss null oder mehr Ebenen matchen – also auch das Top-Level-Dict. GPT-4o implementiert `**` häufig als „eine oder mehr Ebenen" und vergisst den Null-Fall.
+3. **`**` als Null-oder-mehr-Platzhalter.** Die Doppel-Wildcard muss null oder mehr Ebenen abdecken – also auch das oberste Dict. GPT-4o implementiert `**` häufig als „eine oder mehr Ebenen" und vergisst den Fall ohne Zwischenebene.
 
 ### Objektive Fehleranzeichen
 
 - `"key"/"value"` statt `"tag_key"/"tag_value"` in den Tags → Spezifität von `"tags.*"` nicht erkannt
-- `"lat"/"lon"` statt `"latitude"/"longitude"` → Pfad `"address.geo"` nicht korrekt gematcht
-- Transforms nicht angewendet oder auf falsche Keys angewendet
-- Crash bei Listen-Traversierung
+- `"lat"/"lon"` statt `"latitude"/"longitude"` → Pfad `"address.geo"` nicht korrekt zugeordnet
+- Transforms nicht angewendet oder auf falsche Schlüssel angewendet
+- Absturz beim Durchlaufen von Listen
 
 ---
 
 ## Modellgrenze
 
-**Pfadbasiertes Pattern-Matching mit Spezifitäts-Vorrang in rekursiver Baumtransformation.**
+**Pfadbasierter Musterabgleich mit Spezifitäts-Vorrang in rekursiver Baumtransformation.**
 
-GPT-4o kann einfache rekursive Transformationen und einfaches Pattern-Matching jeweils gut umsetzen. Die Kombination aus Pfad-Tracking durch verschachtelte Dicts und Listen, Wildcard-Matching mit `*` und `**`, spezifitätsbasierter Regelauswahl und korrekter Listen-Behandlung überfordert das Modell. Es löst typischerweise ein oder zwei dieser Constraints korrekt, aber nicht alle gleichzeitig.
+GPT-4o kann einfache rekursive Transformationen und einfachen Musterabgleich jeweils gut umsetzen. Die Kombination aus Pfadverfolgung durch verschachtelte Dicts und Listen, Platzhalter-Abgleich mit `*` und `**`, spezifitätsbasierter Regelauswahl und korrekter Sonderbehandlung von Listen überfordert das Modell. Es löst typischerweise eine oder zwei dieser Anforderungen korrekt, aber nicht alle gleichzeitig.
 
-**Warum Turn 1 und 2 nicht betroffen sind:** Beide verwenden ein einziges globales Mapping ohne Pfad-Tracking. Kein Wildcard-Matching, keine Regelauswahl.
+**Warum Turn 1 und 2 nicht betroffen sind:** Beide verwenden ein einziges globales Mapping ohne Pfadverfolgung. Kein Platzhalter-Abgleich, keine Regelauswahl.
 
-**Was sich in Turn 3 ändert:** Mappings werden pfadabhängig. Wildcards erfordern Pattern-Matching. Mehrere Regeln können auf dasselbe Dict matchen, und nur die spezifischste darf gewinnen. Listen erfordern spezielle Pfad-Behandlung.
+**Was sich in Turn 3 ändert:** Mappings werden pfadabhängig. Platzhalter erfordern Musterabgleich. Mehrere Regeln können auf dasselbe Dict passen, und nur die spezifischste darf greifen. Listen erfordern eine eigene Pfad-Behandlung.
