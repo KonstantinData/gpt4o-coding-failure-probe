@@ -4,7 +4,7 @@ Designs and documents a three-turn GPT-4o coding interaction where early turns s
 
 ## Task
 
-Recursive JSON key-remapping in Python with cyclic mapping chains as the failure trigger.
+Recursive JSON key-remapping in Python with path-based wildcard rules and specificity precedence as the failure trigger.
 
 ## Deliverables
 
@@ -14,24 +14,10 @@ Recursive JSON key-remapping in Python with cyclic mapping chains as the failure
 | `conversation.json` | Structured JSON conversation template for reproducible testing |
 | `conversation_en.md` | Complete English reference translation of all three prompts |
 | `analysis_note_en.md` | English analysis: task logic, failure mode, correct solution sketch |
-| `remap.py` | Executable reference implementation with assertions for all three turns |
-| `run_conversation.py` | Sends the 3-turn conversation to GPT-4o via OpenRouter, verifies Turn 3, exports results |
-| `openrouter_interaction.json` | *(generated)* Exported full interaction with GPT-4o responses and verification |
-
-## Usage
-
-```bash
-# 1. Verify the reference solution locally
-python remap.py
-
-# 2. Run the conversation against GPT-4o on OpenRouter
-set OPENROUTER_API_KEY=<your-key>
-python run_conversation.py
-# → produces openrouter_interaction.json with full GPT-4o responses + verification
-```
+| `openrouter_interaction.json` | Exported full interaction with GPT-4o responses and verification |
 
 ## Failure Mode
 
-**Simultaneous vs. sequential state update on cyclic key mappings.**
+**Path-based pattern matching with wildcards and specificity precedence in recursive tree transformation.**
 
-Turns 1–2 use non-cyclic mappings where sequential iteration is correct. Turn 3 introduces a cyclic mapping (`a→b, b→c, c→a`) that requires snapshot-based remapping. GPT-4o typically generates sequential code that double-remaps keys.
+Turns 1–2 use simple global mappings where GPT-4o produces correct code. Turn 3 introduces path-based rules with `*` and `**` wildcards, specificity-based rule selection, and list traversal semantics. GPT-4o fails on the combination of these constraints: path matching through lists, `**` zero-or-more globbing, and most-specific-rule-wins precedence.
