@@ -8,16 +8,15 @@ Recursive transformation of nested JSON objects in Python. Key remapping with co
 
 ## Turn 1 – Simple Recursive Key Remapping
 
-### Prompt (sent in German)
+### Prompt
 
 ```
-Schreibe eine Python-Funktion `remap_keys(obj, mapping)`, die ein beliebig tief verschachteltes
-JSON-kompatibles Objekt (dicts, lists, primitive Werte) rekursiv durchläuft und alle
-Dictionary-Keys gemäß dem `mapping`-Dict umbenennt. Keys, die nicht im Mapping vorkommen,
-bleiben unverändert. Die Funktion soll ein neues Objekt zurückgeben, ohne das Original zu
-verändern.
+Write a Python function `remap_keys(obj, mapping)` that recursively traverses an arbitrarily
+nested JSON-compatible object (dicts, lists, primitive values) and renames all dictionary keys
+according to the `mapping` dict. Keys not present in the mapping stay unchanged. The function
+should return a new object without modifying the original.
 
-Beispiel:
+Example:
   remap_keys({"name": "Alice", "address": {"city": "Berlin"}}, {"name": "full_name", "city": "town"})
   → {"full_name": "Alice", "address": {"town": "Berlin"}}
 ```
@@ -36,17 +35,17 @@ GPT-4o produces a correct recursive function. Standard pattern: type dispatch on
 
 ## Turn 2 – Adding Conditional Value Transforms
 
-### Prompt (sent in German)
+### Prompt
 
 ```
-Erweitere die Funktion zu `remap_and_transform(obj, mapping, transforms)`.
+Extend the function to `remap_and_transform(obj, mapping, transforms)`.
 
-Der neue Parameter `transforms` ist ein Dict, das Ziel-Key-Namen (also die NEUEN Namen nach
-dem Remapping) auf Transformationsfunktionen abbildet. Wenn ein Key nach dem Remapping einen
-Eintrag in `transforms` hat, wird die zugehörige Funktion auf den Wert angewendet (nur auf
-Blatt-Werte, nicht auf verschachtelte Dicts/Listen).
+The new parameter `transforms` is a dict that maps target key names (the NEW names after
+remapping) to transformation functions. If a key has an entry in `transforms` after remapping,
+the corresponding function is applied to the value (only to leaf values, not to nested
+dicts/lists).
 
-Beispiel:
+Example:
   remap_and_transform(
       {"name": "Alice", "age": 29.7, "address": {"city": "Berlin"}},
       {"name": "full_name", "city": "town"},
@@ -70,31 +69,30 @@ Clean extension of Turn 1. Remap first, then transform lookup on the new key. Tr
 
 ## Turn 3 – Path-Based Rules with Wildcards and Specificity Precedence
 
-### Prompt (sent in German)
+### Prompt
 
 ```
-Letzte Erweiterung. Ändere die Signatur zu:
+Final extension. Change the signature to:
 
   remap_and_transform(obj, rules, transforms)
 
-`rules` ist jetzt eine Liste von Pfad-basierten Regeln. Jede Regel hat die Form:
-  {"path": "<pfad-pattern>", "mapping": <dict>}
+`rules` is now a list of path-based rules. Each rule has the form:
+  {"path": "<path-pattern>", "mapping": <dict>}
 
-Ein Pfad-Pattern beschreibt, WO im Objekt das Mapping angewendet wird:
-- "." bedeutet: auf das Top-Level-Dict
-- "address" bedeutet: auf das Dict, das unter dem Key "address" liegt
-- "address.geo" bedeutet: auf das Dict unter "address" → "geo"
-- "*" ist ein Wildcard und matcht EINEN beliebigen Key auf dieser Ebene
-- "**" matcht NULL ODER MEHR Ebenen (wie bei Glob-Patterns)
+A path pattern describes WHERE in the object the mapping is applied:
+- "." means: the top-level dict
+- "address" means: the dict nested under key "address"
+- "address.geo" means: the dict under "address" → "geo"
+- "*" is a wildcard matching ONE arbitrary key at that level
+- "**" matches ZERO OR MORE levels (like glob patterns)
 
-Spezifitäts-Regel: Wenn mehrere Regeln auf dasselbe Dict matchen, gewinnt die
-SPEZIFISCHSTE Regel (die mit den wenigsten Wildcards). Bei Gleichstand gewinnt
-die Regel, die in der Liste ZUERST steht. Es wird pro Dict nur EINE Regel angewendet
-(die Gewinner-Regel), nicht mehrere.
+Specificity rule: when multiple rules match the same dict, the MOST SPECIFIC rule wins
+(the one with the fewest wildcards). On a tie, the rule listed FIRST wins. Only ONE rule
+is applied per dict (the winner), not multiple.
 
-`transforms` funktioniert wie bisher.
+`transforms` works as before.
 
-Teste mit:
+Test with:
   data = {
       "id": 1,
       "name": "Alice",
@@ -125,7 +123,7 @@ Teste mit:
 
   remap_and_transform(data, rules, transforms)
 
-Erwartetes Ergebnis:
+Expected result:
   {
       "identifier": 1,
       "full_name": "ALICE",
@@ -139,9 +137,8 @@ Erwartetes Ergebnis:
       ]
   }
 
-Beachte: Die "**"-Regel matcht zwar auf alle Dicts, aber sie verliert überall dort,
-wo eine spezifischere Regel existiert. Sie würde nur greifen, wenn es ein Dict gäbe,
-auf das keine andere Regel passt.
+Note: the "**" rule matches all dicts, but it loses wherever a more specific rule exists.
+It would only apply to a dict that no other rule covers.
 ```
 
 ### Expected Behavior: Model Failure

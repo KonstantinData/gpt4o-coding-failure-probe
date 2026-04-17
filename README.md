@@ -16,7 +16,7 @@ Recursive JSON key-remapping in Python. The failure trigger is path-based wildca
 | `analysis_note.md` | Analysis note covering task logic, failure mode, and observed bugs |
 | `openrouter_interaction.json` | Recorded GPT-4o interaction with raw API responses and verification |
 
-The conversation was conducted in German. All documentation and analysis is in English. The original German prompts are preserved verbatim in `conversation.json`, `openrouter_interaction.json`, and as quoted blocks in `conversation_design.md`.
+The conversation was conducted in German. All documentation and analysis is in English. The original German prompts are preserved verbatim in `openrouter_interaction.json` as raw API data.
 
 ## Failure Mode
 
