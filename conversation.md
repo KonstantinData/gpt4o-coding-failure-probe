@@ -1,9 +1,7 @@
-# English Reference Translation – Full Three-Turn Conversation
+# English Reference Version – Full Three-Turn Conversation
 
-Faithful English translation of the German conversation with GPT-4o on OpenRouter.
-All assistant responses are translated from the actual API output recorded in
-`openrouter_interaction.json`. Code blocks are reproduced verbatim (German comments
-translated inline).
+English reference version of the recorded three-turn conversation with GPT-4o on OpenRouter.
+Assistant responses reflect the recorded API output in `openrouter_interaction.json`.
 
 ---
 
@@ -21,7 +19,7 @@ translated inline).
 >   `remap_keys({"name": "Alice", "address": {"city": "Berlin"}}, {"name": "full_name", "city": "town"})`
 >   → `{"full_name": "Alice", "address": {"town": "Berlin"}}`
 
-### Assistant (GPT-4o) — translated from API response `gen-1776415662-RuWZMYZdkXI32q0dJs4Z`
+### Assistant (GPT-4o) — from API response `gen-1776415662-RuWZMYZdkXI32q0dJs4Z`
 
 > To implement the `remap_keys` function, which recursively renames the keys of
 > a JSON-like object according to a given mapping, we need to recursively walk
@@ -83,7 +81,7 @@ translated inline).
 >   `remap_and_transform({"name": "Alice", "age": 29.7, "address": {"city": "Berlin"}}, {"name": "full_name", "city": "town"}, {"full_name": str.upper, "town": lambda s: s[:3]})`
 >   → `{"full_name": "ALICE", "age": 29.7, "address": {"town": "Ber"}}`
 
-### Assistant (GPT-4o) — translated from API response `gen-1776415667-1SLEF8xN99TQqj4QRlKH`
+### Assistant (GPT-4o) — from API response `gen-1776415667-1SLEF8xN99TQqj4QRlKH`
 
 > To extend the function and support transformation functions applied to the
 > renamed keys, we just need to insert the transformation step into the existing
@@ -175,7 +173,7 @@ translated inline).
 >
 > *(Test data and expected output as specified in `conversation.json`.)*
 
-### Assistant (GPT-4o) — translated from API response `gen-1776415673-u2U7W8nQmQFtGcdekxmj`
+### Assistant (GPT-4o) — from API response `gen-1776415673-u2U7W8nQmQFtGcdekxmj`
 
 > To implement this complex function, we need to process the path-based rules
 > so that we apply the matching mapping to the specific substructures of the
