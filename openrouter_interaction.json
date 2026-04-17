@@ -1,139 +1,191 @@
 {
-  "raw_api_responses": [
+  "meta": {
+    "model": "openai/gpt-4o",
+    "provider": "openrouter",
+    "task": "recursive-json-key-remapping",
+    "language": "de",
+    "turns": 3,
+    "expected_failure_turn": 3,
+    "failure_mode": "path-wildcards-specificity-lists"
+  },
+  "turns": [
     {
-      "id": "gen-1776415662-RuWZMYZdkXI32q0dJs4Z",
-      "object": "chat.completion",
-      "created": 1776415662,
-      "model": "openai/gpt-4o",
-      "provider": "OpenAI",
-      "system_fingerprint": "fp_d65b5b17fe",
-      "choices": [
-        {
-          "index": 0,
-          "logprobs": null,
-          "finish_reason": "stop",
-          "native_finish_reason": "stop",
-          "message": {
-            "role": "assistant",
-            "content": "Um die `remap_keys`-Funktion zu implementieren, die die Keys eines JSON-ähnlichen Objekts gemäß einem vorgegebenen Mapping rekursiv umbenennt, müssen wir die Struktur des Objekts rekursiv durchlaufen. Die Funktion sollte zwischen Dictionaries, Listen und primitiven Werten unterscheiden können. Hier ist eine mögliche Implementierung dieser Funktion:\n\n```python\ndef remap_keys(obj, mapping):\n    if isinstance(obj, dict):\n        # Erstelle ein neues Dictionary, indem wir alle Key-Value-Paare des Ursprungs-Dictionaries durchlaufen.\n        return {mapping.get(k, k): remap_keys(v, mapping) for k, v in obj.items()}\n    elif isinstance(obj, list):\n        # Bearbeite jedes Element der Liste rekursiv.\n        return [remap_keys(item, mapping) for item in obj]\n    else:\n        # Primitive Werte einfach zurückgeben.\n        return obj\n\n# Beispielaufruf\noriginal_obj = {\"name\": \"Alice\", \"address\": {\"city\": \"Berlin\"}}\nmapping = {\"name\": \"full_name\", \"city\": \"town\"}\nremapped_obj = remap_keys(original_obj, mapping)\n\nprint(remapped_obj)  # Ausgabe: {'full_name': 'Alice', 'address': {'town': 'Berlin'}}\n```\n\n### Funktionsweise:\n\n1. **Dictionaries (dict):** Wenn das Objekt ein Dictionary ist, durchläuft die Funktion alle Key-Value-Paare. Jeder Key wird mithilfe des `mapping` verändert, falls im Mapping vorhanden. Der Wert wird rekursiv bearbeitet.\n\n2. **Listen (list):** Wenn das Objekt eine Liste ist, durchläuft die Funktion jedes Element der Liste und bearbeitet es rekursiv.\n\n3. **Primitive Werte:** Wenn das Objekt weder ein Dictionary noch eine Liste ist (d.h., es handelt sich um einen primitiven Wert wie `int`, `str`, etc.), wird der Wert unverändert zurückgegeben.\n\nDiese rekursive Funktion erstellt neue Instanzen der modifizierten Objekte, was sicherstellt, dass das Originalobjekt nicht verändert wird.",
-            "refusal": null,
-            "reasoning": null
+      "turn": 1,
+      "user_message": "Schreibe eine Python-Funktion `remap_keys(obj, mapping)`, die ein beliebig tief verschachteltes JSON-kompatibles Objekt (dicts, lists, primitive Werte) rekursiv durchläuft und alle Dictionary-Keys gemäß dem `mapping`-Dict umbenennt. Keys, die nicht im Mapping vorkommen, bleiben unverändert. Die Funktion soll ein neues Objekt zurückgeben, ohne das Original zu verändern.\n\nBeispiel:\n  remap_keys({\"name\": \"Alice\", \"address\": {\"city\": \"Berlin\"}}, {\"name\": \"full_name\", \"city\": \"town\"})\n  → {\"full_name\": \"Alice\", \"address\": {\"town\": \"Berlin\"}}",
+      "expected_outcome": "correct",
+      "raw_api_response": {
+        "id": "gen-1776415662-RuWZMYZdkXI32q0dJs4Z",
+        "object": "chat.completion",
+        "created": 1776415662,
+        "model": "openai/gpt-4o",
+        "provider": "OpenAI",
+        "system_fingerprint": "fp_d65b5b17fe",
+        "choices": [
+          {
+            "index": 0,
+            "logprobs": null,
+            "finish_reason": "stop",
+            "native_finish_reason": "stop",
+            "message": {
+              "role": "assistant",
+              "content": "Um die `remap_keys`-Funktion zu implementieren, die die Keys eines JSON-ähnlichen Objekts gemäß einem vorgegebenen Mapping rekursiv umbenennt, müssen wir die Struktur des Objekts rekursiv durchlaufen. Die Funktion sollte zwischen Dictionaries, Listen und primitiven Werten unterscheiden können. Hier ist eine mögliche Implementierung dieser Funktion:\n\n```python\ndef remap_keys(obj, mapping):\n    if isinstance(obj, dict):\n        # Erstelle ein neues Dictionary, indem wir alle Key-Value-Paare des Ursprungs-Dictionaries durchlaufen.\n        return {mapping.get(k, k): remap_keys(v, mapping) for k, v in obj.items()}\n    elif isinstance(obj, list):\n        # Bearbeite jedes Element der Liste rekursiv.\n        return [remap_keys(item, mapping) for item in obj]\n    else:\n        # Primitive Werte einfach zurückgeben.\n        return obj\n\n# Beispielaufruf\noriginal_obj = {\"name\": \"Alice\", \"address\": {\"city\": \"Berlin\"}}\nmapping = {\"name\": \"full_name\", \"city\": \"town\"}\nremapped_obj = remap_keys(original_obj, mapping)\n\nprint(remapped_obj)  # Ausgabe: {'full_name': 'Alice', 'address': {'town': 'Berlin'}}\n```\n\n### Funktionsweise:\n\n1. **Dictionaries (dict):** Wenn das Objekt ein Dictionary ist, durchläuft die Funktion alle Key-Value-Paare. Jeder Key wird mithilfe des `mapping` verändert, falls im Mapping vorhanden. Der Wert wird rekursiv bearbeitet.\n\n2. **Listen (list):** Wenn das Objekt eine Liste ist, durchläuft die Funktion jedes Element der Liste und bearbeitet es rekursiv.\n\n3. **Primitive Werte:** Wenn das Objekt weder ein Dictionary noch eine Liste ist (d.h., es handelt sich um einen primitiven Wert wie `int`, `str`, etc.), wird der Wert unverändert zurückgegeben.\n\nDiese rekursive Funktion erstellt neue Instanzen der modifizierten Objekte, was sicherstellt, dass das Originalobjekt nicht verändert wird.",
+              "refusal": null,
+              "reasoning": null
+            }
           }
-        }
-      ],
-      "usage": {
-        "prompt_tokens": 151,
-        "completion_tokens": 437,
-        "total_tokens": 588,
-        "cost": 0.0047475,
-        "is_byok": false,
-        "prompt_tokens_details": {
-          "cached_tokens": 0,
-          "cache_write_tokens": 0,
-          "audio_tokens": 0,
-          "video_tokens": 0
-        },
-        "cost_details": {
-          "upstream_inference_cost": 0.0047475,
-          "upstream_inference_prompt_cost": 0.0003775,
-          "upstream_inference_completions_cost": 0.00437
-        },
-        "completion_tokens_details": {
-          "reasoning_tokens": 0,
-          "image_tokens": 0,
-          "audio_tokens": 0
+        ],
+        "usage": {
+          "prompt_tokens": 151,
+          "completion_tokens": 437,
+          "total_tokens": 588,
+          "cost": 0.0047475,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0047475,
+            "upstream_inference_prompt_cost": 0.0003775,
+            "upstream_inference_completions_cost": 0.00437
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
         }
       }
     },
     {
-      "id": "gen-1776415667-1SLEF8xN99TQqj4QRlKH",
-      "object": "chat.completion",
-      "created": 1776415667,
-      "model": "openai/gpt-4o",
-      "provider": "Azure",
-      "system_fingerprint": "fp_e9b9b028d7",
-      "choices": [
-        {
-          "index": 0,
-          "logprobs": null,
-          "finish_reason": "stop",
-          "native_finish_reason": "stop",
-          "message": {
-            "role": "assistant",
-            "content": "Um die Funktion zu erweitern und Transformationsfunktionen zu ermöglichen, die auf die umbenannten Keys angewendet werden, müssen wir lediglich den Schritt der Transformation in die bestehende Logik einfügen. Hier ist die erweiterte Implementierung:\n\n```python\ndef remap_and_transform(obj, mapping, transforms):\n    def apply_transform(key, value):\n        # Überprüfe, ob der Key eine Transformationsfunktion hat und wende diese an.\n        transform_func = transforms.get(key)\n        if transform_func and not isinstance(value, (dict, list)):\n            return transform_func(value)\n        return value\n    \n    if isinstance(obj, dict):\n        # Erstelle ein neues Dictionary mit umbenannten und transformierten Keys/Werten.\n        new_dict = {}\n        for k, v in obj.items():\n            new_key = mapping.get(k, k)\n            new_value = remap_and_transform(v, mapping, transforms)\n            # Wende die Transformation auf die Blatt-Werte an\n            new_dict[new_key] = apply_transform(new_key, new_value)\n        return new_dict\n    elif isinstance(obj, list):\n        # Bearbeite jedes Element der Liste rekursiv.\n        return [remap_and_transform(item, mapping, transforms) for item in obj]\n    else:\n        # Wende die Transformation auf primitive Werte an (sofern eine definiert ist).\n        return obj\n\n# Beispielaufruf\noriginal_obj = {\"name\": \"Alice\", \"age\": 29.7, \"address\": {\"city\": \"Berlin\"}}\nmapping = {\"name\": \"full_name\", \"city\": \"town\"}\ntransforms = {\"full_name\": str.upper, \"town\": lambda s: s[:3]}\n\nremapped_transformed_obj = remap_and_transform(original_obj, mapping, transforms)\n\nprint(remapped_transformed_obj)\n# Ausgabe: {'full_name': 'ALICE', 'age': 29.7, 'address': {'town': 'Ber'}}\n```\n\n### Erklärung:\n\n1. **Hauptänderung:** Eine innere Funktion `apply_transform` wird hinzugefügt, die überprüft, ob ein Key in den `transforms` vorhanden ist. Falls ja, wendet sie die Transformationsfunktion auf den Wert an, sofern dieser kein Dictionary oder eine Liste ist (Blatt-Wert).\n\n2. **Dictionaries (dict):** Für jeden Key wird zunächst der neue Key aus dem Mapping angewendet, und der Wert wird rekursiv bearbeitet. Danach wird überprüft, ob eine Transformation auf diesen neuen Key angewendet werden muss.\n\n3. **Listen (list):** Die Listen werden, wie gehabt, rekursiv durchlaufen, ohne dass Transformationsfunktionen direkt auf der Liste angewendet werden.\n\n4. **Primitive Werte:** Diese werden nur durch die `apply_transform`-Funktion verändert, wenn sie Blatt-Werte sind.\n\nDiese Lösung erweitert die bestehende Logik so, dass auch Transformationsfunktionen auf die finalen umbenannten Keys angewendet werden können.",
-            "refusal": null,
-            "reasoning": null
+      "turn": 2,
+      "user_message": "Erweitere die Funktion zu `remap_and_transform(obj, mapping, transforms)`.\n\nDer neue Parameter `transforms` ist ein Dict, das Ziel-Key-Namen (also die NEUEN Namen nach dem Remapping) auf Transformationsfunktionen abbildet. Wenn ein Key nach dem Remapping einen Eintrag in `transforms` hat, wird die zugehörige Funktion auf den Wert angewendet (nur auf Blatt-Werte, nicht auf verschachtelte Dicts/Listen).\n\nBeispiel:\n  remap_and_transform(\n      {\"name\": \"Alice\", \"age\": 29.7, \"address\": {\"city\": \"Berlin\"}},\n      {\"name\": \"full_name\", \"city\": \"town\"},\n      {\"full_name\": str.upper, \"town\": lambda s: s[:3]}\n  )\n  → {\"full_name\": \"ALICE\", \"age\": 29.7, \"address\": {\"town\": \"Ber\"}}",
+      "expected_outcome": "correct",
+      "raw_api_response": {
+        "id": "gen-1776415667-1SLEF8xN99TQqj4QRlKH",
+        "object": "chat.completion",
+        "created": 1776415667,
+        "model": "openai/gpt-4o",
+        "provider": "Azure",
+        "system_fingerprint": "fp_e9b9b028d7",
+        "choices": [
+          {
+            "index": 0,
+            "logprobs": null,
+            "finish_reason": "stop",
+            "native_finish_reason": "stop",
+            "message": {
+              "role": "assistant",
+              "content": "Um die Funktion zu erweitern und Transformationsfunktionen zu ermöglichen, die auf die umbenannten Keys angewendet werden, müssen wir lediglich den Schritt der Transformation in die bestehende Logik einfügen. Hier ist die erweiterte Implementierung:\n\n```python\ndef remap_and_transform(obj, mapping, transforms):\n    def apply_transform(key, value):\n        # Überprüfe, ob der Key eine Transformationsfunktion hat und wende diese an.\n        transform_func = transforms.get(key)\n        if transform_func and not isinstance(value, (dict, list)):\n            return transform_func(value)\n        return value\n    \n    if isinstance(obj, dict):\n        # Erstelle ein neues Dictionary mit umbenannten und transformierten Keys/Werten.\n        new_dict = {}\n        for k, v in obj.items():\n            new_key = mapping.get(k, k)\n            new_value = remap_and_transform(v, mapping, transforms)\n            # Wende die Transformation auf die Blatt-Werte an\n            new_dict[new_key] = apply_transform(new_key, new_value)\n        return new_dict\n    elif isinstance(obj, list):\n        # Bearbeite jedes Element der Liste rekursiv.\n        return [remap_and_transform(item, mapping, transforms) for item in obj]\n    else:\n        # Wende die Transformation auf primitive Werte an (sofern eine definiert ist).\n        return obj\n\n# Beispielaufruf\noriginal_obj = {\"name\": \"Alice\", \"age\": 29.7, \"address\": {\"city\": \"Berlin\"}}\nmapping = {\"name\": \"full_name\", \"city\": \"town\"}\ntransforms = {\"full_name\": str.upper, \"town\": lambda s: s[:3]}\n\nremapped_transformed_obj = remap_and_transform(original_obj, mapping, transforms)\n\nprint(remapped_transformed_obj)\n# Ausgabe: {'full_name': 'ALICE', 'age': 29.7, 'address': {'town': 'Ber'}}\n```\n\n### Erklärung:\n\n1. **Hauptänderung:** Eine innere Funktion `apply_transform` wird hinzugefügt, die überprüft, ob ein Key in den `transforms` vorhanden ist. Falls ja, wendet sie die Transformationsfunktion auf den Wert an, sofern dieser kein Dictionary oder eine Liste ist (Blatt-Wert).\n\n2. **Dictionaries (dict):** Für jeden Key wird zunächst der neue Key aus dem Mapping angewendet, und der Wert wird rekursiv bearbeitet. Danach wird überprüft, ob eine Transformation auf diesen neuen Key angewendet werden muss.\n\n3. **Listen (list):** Die Listen werden, wie gehabt, rekursiv durchlaufen, ohne dass Transformationsfunktionen direkt auf der Liste angewendet werden.\n\n4. **Primitive Werte:** Diese werden nur durch die `apply_transform`-Funktion verändert, wenn sie Blatt-Werte sind.\n\nDiese Lösung erweitert die bestehende Logik so, dass auch Transformationsfunktionen auf die finalen umbenannten Keys angewendet werden können.",
+              "refusal": null,
+              "reasoning": null
+            }
           }
-        }
-      ],
-      "usage": {
-        "prompt_tokens": 791,
-        "completion_tokens": 617,
-        "total_tokens": 1408,
-        "cost": 0.0081475,
-        "is_byok": false,
-        "prompt_tokens_details": {
-          "cached_tokens": 0,
-          "cache_write_tokens": 0,
-          "audio_tokens": 0,
-          "video_tokens": 0
-        },
-        "cost_details": {
-          "upstream_inference_cost": 0.0081475,
-          "upstream_inference_prompt_cost": 0.0019775,
-          "upstream_inference_completions_cost": 0.00617
-        },
-        "completion_tokens_details": {
-          "reasoning_tokens": 0,
-          "image_tokens": 0,
-          "audio_tokens": 0
+        ],
+        "usage": {
+          "prompt_tokens": 791,
+          "completion_tokens": 617,
+          "total_tokens": 1408,
+          "cost": 0.0081475,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0081475,
+            "upstream_inference_prompt_cost": 0.0019775,
+            "upstream_inference_completions_cost": 0.00617
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
         }
       }
     },
     {
-      "id": "gen-1776415673-u2U7W8nQmQFtGcdekxmj",
-      "object": "chat.completion",
-      "created": 1776415673,
-      "model": "openai/gpt-4o",
-      "provider": "OpenAI",
-      "system_fingerprint": "fp_d65b5b17fe",
-      "choices": [
-        {
-          "index": 0,
-          "logprobs": null,
-          "finish_reason": "stop",
-          "native_finish_reason": "stop",
-          "message": {
-            "role": "assistant",
-            "content": "Um diese komplexe Funktion zu implementieren, müssen wir die Pfad-basierten Regeln so verarbeiten, dass wir das passende Mapping auf die spezifischen Unterstrukturen des Objekts anwenden. Wir verwenden ein tiefergehendes Matching-System und eine Rekursion, um durch die Objektstruktur zu navigieren und die Regeln anzuwenden. Hier ist ein möglicher Ansatz:\n\n```python\ndef remap_and_transform(obj, rules, transforms):\n    def apply_transform(key, value):\n        # Überprüfe, ob der Key eine Transformationsfunktion hat und wende diese an.\n        transform_func = transforms.get(key)\n        if transform_func and not isinstance(value, (dict, list)):\n            return transform_func(value)\n        return value\n\n    def get_applicable_mapping(path_parts, rules):\n        # Finde die am besten passende Regel für den aktuellen Pfad\n        best_rule = None\n        best_specificity = float('inf')  # Je kleiner der Wert, desto spezifischer die Regel\n\n        for rule in rules:\n            rule_path = rule[\"path\"].split('.')\n            specificity, matches = check_path_match(path_parts, rule_path)\n            if matches and specificity < best_specificity:\n                best_rule = rule\n                best_specificity = specificity\n\n        return best_rule[\"mapping\"] if best_rule else {}\n\n    def check_path_match(path_parts, rule_path):\n        # Vergleiche Objekt-Pfad mit Regel-Pfad\n        specificity = 0\n        path_pos = 0\n        rule_pos = 0\n\n        while path_pos < len(path_parts) and rule_pos < len(rule_path):\n            if rule_path[rule_pos] == '**':\n                rule_pos += 1\n                if rule_pos == len(rule_path):\n                    return specificity, True\n            elif rule_path[rule_pos] == '*' or path_parts[path_pos] == rule_path[rule_pos]:\n                if rule_path[rule_pos] != '*':\n                    specificity += 1\n                path_pos += 1\n                rule_pos += 1\n            else:\n                return specificity, False\n\n        # Wenn am Ende alle passenden Teile durchlaufen sind\n        if path_pos == len(path_parts) and (rule_pos == len(rule_path) or all(x == '*' for x in rule_path[rule_pos:])):\n            return specificity, True\n        else:\n            return specificity, False\n\n    def remap_recursive(obj, path_parts):\n        if isinstance(obj, dict):\n            # Wende das am besten passende Mapping an\n            applicable_mapping = get_applicable_mapping(path_parts, rules)\n            new_dict = {}\n            for k, v in obj.items():\n                new_key = applicable_mapping.get(k, k)\n                new_value = remap_recursive(v, path_parts + [k])\n                new_dict[new_key] = apply_transform(new_key, new_value)\n            return new_dict\n\n        elif isinstance(obj, list):\n            # Bearbeite jedes Element der Liste rekursiv.\n            return [remap_recursive(item, path_parts + ['*']) for item in obj]\n\n        else:\n            # Wende die Transformation auf primitive Werte an (sofern eine definiert ist).\n            return obj\n\n    return remap_recursive(obj, [])\n\n# Test-Daten\ndata = {\n    \"id\": 1,\n    \"name\": \"Alice\",\n    \"address\": {\n        \"city\": \"Berlin\",\n        \"geo\": {\"lat\": 52.52, \"lon\": 13.405}\n    },\n    \"tags\": [\n        {\"key\": \"role\", \"value\": \"admin\"},\n        {\"key\": \"dept\", \"value\": \"engineering\"}\n    ]\n}\n\nrules = [\n    {\"path\": \"**\",          \"mapping\": {\"key\": \"k\", \"value\": \"v\"}},\n    {\"path\": \".\",           \"mapping\": {\"name\": \"full_name\", \"id\": \"identifier\"}},\n    {\"path\": \"address\",     \"mapping\": {\"city\": \"town\"}},\n    {\"path\": \"address.geo\", \"mapping\": {\"lat\": \"latitude\", \"lon\": \"longitude\"}},\n    {\"path\": \"tags.*\",      \"mapping\": {\"key\": \"tag_key\", \"value\": \"tag_value\"}}\n]\n\ntransforms = {\n    \"full_name\": str.upper,\n    \"town\": lambda s: s[:3],\n    \"latitude\": str,\n    \"longitude\": str\n}\n\nresult = remap_and_transform(data, rules, transforms)\nprint(result)\n# Erwartete Ausgabe: {'identifier': 1, 'full_name': 'ALICE', 'address': {'town': 'Ber', 'geo': {'latitude': '52.52', 'longitude': '13.405'}}, 'tags': [{'tag_key': 'role', 'tag_value': 'admin'}, {'tag_key': 'dept', 'tag_value': 'engineering'}]}\n```\n\n### Erklärung:\n1. **Rekursives Durchlaufen:** Die Funktion `remap_recursive` durchläuft die Struktur des Objekts rekursiv. Für jedes Dictionary wird das passende Mapping anhand der gegebenen Regeln ermittelt.\n\n2. **Path Matching:** Die Funktion `check_path_match` vergleicht die aktuelle Pfadstruktur mit den Pfaden der Regeln. Der Grad der Spezifität wird durch die Anzahl der nicht-Wildcard-Matches im Pfad bestimmt. Die Regel mit der größten Spezifität wird angewendet.\n\n3. **Transformationsanwendung:** Diese erfolgt, wie vorher beschrieben, auf die Blattwerte anhand der umbenannten Keys.\n\nDie hier gezeigte Implementierung ist anspruchsvoll, da sie sowohl rekursive Durchläufe als auch komplexe Pfadmuster verarbeitet, folgt dabei aber den Anforderungen und priorisiert spezifischere Regeln.",
-            "refusal": null,
-            "reasoning": null
+      "turn": 3,
+      "user_message": "Letzte Erweiterung. Ändere die Signatur zu:\n\n  remap_and_transform(obj, rules, transforms)\n\n`rules` ist jetzt eine Liste von Pfad-basierten Regeln. Jede Regel hat die Form:\n  {\"path\": \"<pfad-pattern>\", \"mapping\": <dict>}\n\nEin Pfad-Pattern beschreibt, WO im Objekt das Mapping angewendet wird:\n- \".\" bedeutet: auf das Top-Level-Dict\n- \"address\" bedeutet: auf das Dict, das unter dem Key \"address\" liegt\n- \"address.geo\" bedeutet: auf das Dict unter \"address\" → \"geo\"\n- \"*\" ist ein Wildcard und matcht EINEN beliebigen Key auf dieser Ebene\n- \"**\" matcht NULL ODER MEHR Ebenen (wie bei Glob-Patterns)\n\nSpezifitäts-Regel: Wenn mehrere Regeln auf dasselbe Dict matchen, gewinnt die SPEZIFISCHSTE Regel (die mit den wenigsten Wildcards). Bei Gleichstand gewinnt die Regel, die in der Liste ZUERST steht. Es wird pro Dict nur EINE Regel angewendet (die Gewinner-Regel), nicht mehrere.\n\n`transforms` funktioniert wie bisher.\n\nTeste mit:\n  data = {\n      \"id\": 1,\n      \"name\": \"Alice\",\n      \"address\": {\n          \"city\": \"Berlin\",\n          \"geo\": {\"lat\": 52.52, \"lon\": 13.405}\n      },\n      \"tags\": [\n          {\"key\": \"role\", \"value\": \"admin\"},\n          {\"key\": \"dept\", \"value\": \"engineering\"}\n      ]\n  }\n\n  rules = [\n      {\"path\": \"**\",          \"mapping\": {\"key\": \"k\", \"value\": \"v\"}},\n      {\"path\": \".\",           \"mapping\": {\"name\": \"full_name\", \"id\": \"identifier\"}},\n      {\"path\": \"address\",     \"mapping\": {\"city\": \"town\"}},\n      {\"path\": \"address.geo\", \"mapping\": {\"lat\": \"latitude\", \"lon\": \"longitude\"}},\n      {\"path\": \"tags.*\",      \"mapping\": {\"key\": \"tag_key\", \"value\": \"tag_value\"}}\n  ]\n\n  transforms = {\n      \"full_name\": str.upper,\n      \"town\": lambda s: s[:3],\n      \"latitude\": str,\n      \"longitude\": str\n  }\n\n  remap_and_transform(data, rules, transforms)\n\nErwartetes Ergebnis:\n  {\n      \"identifier\": 1,\n      \"full_name\": \"ALICE\",\n      \"address\": {\n          \"town\": \"Ber\",\n          \"geo\": {\"latitude\": \"52.52\", \"longitude\": \"13.405\"}\n      },\n      \"tags\": [\n          {\"tag_key\": \"role\", \"tag_value\": \"admin\"},\n          {\"tag_key\": \"dept\", \"tag_value\": \"engineering\"}\n      ]\n  }\n\nBeachte: Die \"**\"-Regel matcht zwar auf alle Dicts, aber sie verliert überall dort, wo eine spezifischere Regel existiert. Sie würde nur greifen, wenn es ein Dict gäbe, auf das keine andere Regel passt.",
+      "expected_outcome": "failure",
+      "raw_api_response": {
+        "id": "gen-1776415673-u2U7W8nQmQFtGcdekxmj",
+        "object": "chat.completion",
+        "created": 1776415673,
+        "model": "openai/gpt-4o",
+        "provider": "OpenAI",
+        "system_fingerprint": "fp_d65b5b17fe",
+        "choices": [
+          {
+            "index": 0,
+            "logprobs": null,
+            "finish_reason": "stop",
+            "native_finish_reason": "stop",
+            "message": {
+              "role": "assistant",
+              "content": "Um diese komplexe Funktion zu implementieren, müssen wir die Pfad-basierten Regeln so verarbeiten, dass wir das passende Mapping auf die spezifischen Unterstrukturen des Objekts anwenden. Wir verwenden ein tiefergehendes Matching-System und eine Rekursion, um durch die Objektstruktur zu navigieren und die Regeln anzuwenden. Hier ist ein möglicher Ansatz:\n\n```python\ndef remap_and_transform(obj, rules, transforms):\n    def apply_transform(key, value):\n        # Überprüfe, ob der Key eine Transformationsfunktion hat und wende diese an.\n        transform_func = transforms.get(key)\n        if transform_func and not isinstance(value, (dict, list)):\n            return transform_func(value)\n        return value\n\n    def get_applicable_mapping(path_parts, rules):\n        # Finde die am besten passende Regel für den aktuellen Pfad\n        best_rule = None\n        best_specificity = float('inf')  # Je kleiner der Wert, desto spezifischer die Regel\n\n        for rule in rules:\n            rule_path = rule[\"path\"].split('.')\n            specificity, matches = check_path_match(path_parts, rule_path)\n            if matches and specificity < best_specificity:\n                best_rule = rule\n                best_specificity = specificity\n\n        return best_rule[\"mapping\"] if best_rule else {}\n\n    def check_path_match(path_parts, rule_path):\n        # Vergleiche Objekt-Pfad mit Regel-Pfad\n        specificity = 0\n        path_pos = 0\n        rule_pos = 0\n\n        while path_pos < len(path_parts) and rule_pos < len(rule_path):\n            if rule_path[rule_pos] == '**':\n                rule_pos += 1\n                if rule_pos == len(rule_path):\n                    return specificity, True\n            elif rule_path[rule_pos] == '*' or path_parts[path_pos] == rule_path[rule_pos]:\n                if rule_path[rule_pos] != '*':\n                    specificity += 1\n                path_pos += 1\n                rule_pos += 1\n            else:\n                return specificity, False\n\n        # Wenn am Ende alle passenden Teile durchlaufen sind\n        if path_pos == len(path_parts) and (rule_pos == len(rule_path) or all(x == '*' for x in rule_path[rule_pos:])):\n            return specificity, True\n        else:\n            return specificity, False\n\n    def remap_recursive(obj, path_parts):\n        if isinstance(obj, dict):\n            # Wende das am besten passende Mapping an\n            applicable_mapping = get_applicable_mapping(path_parts, rules)\n            new_dict = {}\n            for k, v in obj.items():\n                new_key = applicable_mapping.get(k, k)\n                new_value = remap_recursive(v, path_parts + [k])\n                new_dict[new_key] = apply_transform(new_key, new_value)\n            return new_dict\n\n        elif isinstance(obj, list):\n            # Bearbeite jedes Element der Liste rekursiv.\n            return [remap_recursive(item, path_parts + ['*']) for item in obj]\n\n        else:\n            # Wende die Transformation auf primitive Werte an (sofern eine definiert ist).\n            return obj\n\n    return remap_recursive(obj, [])\n\n# Test-Daten\ndata = {\n    \"id\": 1,\n    \"name\": \"Alice\",\n    \"address\": {\n        \"city\": \"Berlin\",\n        \"geo\": {\"lat\": 52.52, \"lon\": 13.405}\n    },\n    \"tags\": [\n        {\"key\": \"role\", \"value\": \"admin\"},\n        {\"key\": \"dept\", \"value\": \"engineering\"}\n    ]\n}\n\nrules = [\n    {\"path\": \"**\",          \"mapping\": {\"key\": \"k\", \"value\": \"v\"}},\n    {\"path\": \".\",           \"mapping\": {\"name\": \"full_name\", \"id\": \"identifier\"}},\n    {\"path\": \"address\",     \"mapping\": {\"city\": \"town\"}},\n    {\"path\": \"address.geo\", \"mapping\": {\"lat\": \"latitude\", \"lon\": \"longitude\"}},\n    {\"path\": \"tags.*\",      \"mapping\": {\"key\": \"tag_key\", \"value\": \"tag_value\"}}\n]\n\ntransforms = {\n    \"full_name\": str.upper,\n    \"town\": lambda s: s[:3],\n    \"latitude\": str,\n    \"longitude\": str\n}\n\nresult = remap_and_transform(data, rules, transforms)\nprint(result)\n# Erwartete Ausgabe: {'identifier': 1, 'full_name': 'ALICE', 'address': {'town': 'Ber', 'geo': {'latitude': '52.52', 'longitude': '13.405'}}, 'tags': [{'tag_key': 'role', 'tag_value': 'admin'}, {'tag_key': 'dept', 'tag_value': 'engineering'}]}\n```\n\n### Erklärung:\n1. **Rekursives Durchlaufen:** Die Funktion `remap_recursive` durchläuft die Struktur des Objekts rekursiv. Für jedes Dictionary wird das passende Mapping anhand der gegebenen Regeln ermittelt.\n\n2. **Path Matching:** Die Funktion `check_path_match` vergleicht die aktuelle Pfadstruktur mit den Pfaden der Regeln. Der Grad der Spezifität wird durch die Anzahl der nicht-Wildcard-Matches im Pfad bestimmt. Die Regel mit der größten Spezifität wird angewendet.\n\n3. **Transformationsanwendung:** Diese erfolgt, wie vorher beschrieben, auf die Blattwerte anhand der umbenannten Keys.\n\nDie hier gezeigte Implementierung ist anspruchsvoll, da sie sowohl rekursive Durchläufe als auch komplexe Pfadmuster verarbeitet, folgt dabei aber den Anforderungen und priorisiert spezifischere Regeln.",
+              "refusal": null,
+              "reasoning": null
+            }
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 2056,
+          "completion_tokens": 1174,
+          "total_tokens": 3230,
+          "cost": 0.01688,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.01688,
+            "upstream_inference_prompt_cost": 0.00514,
+            "upstream_inference_completions_cost": 0.01174
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
           }
         }
-      ],
-      "usage": {
-        "prompt_tokens": 2056,
-        "completion_tokens": 1174,
-        "total_tokens": 3230,
-        "cost": 0.01688,
-        "is_byok": false,
-        "prompt_tokens_details": {
-          "cached_tokens": 0,
-          "cache_write_tokens": 0,
-          "audio_tokens": 0,
-          "video_tokens": 0
+      },
+      "correct_output": {
+        "identifier": 1,
+        "full_name": "ALICE",
+        "address": {
+          "town": "Ber",
+          "geo": {
+            "latitude": "52.52",
+            "longitude": "13.405"
+          }
         },
-        "cost_details": {
-          "upstream_inference_cost": 0.01688,
-          "upstream_inference_prompt_cost": 0.00514,
-          "upstream_inference_completions_cost": 0.01174
-        },
-        "completion_tokens_details": {
-          "reasoning_tokens": 0,
-          "image_tokens": 0,
-          "audio_tokens": 0
-        }
-      }
+        "tags": [
+          {
+            "tag_key": "role",
+            "tag_value": "admin"
+          },
+          {
+            "tag_key": "dept",
+            "tag_value": "engineering"
+          }
+        ]
+      },
+      "failure_indicators": [
+        "Dicts in lists get wrong path, so tags.* does not match",
+        "** overrides specific rules due to missing specificity logic",
+        "** does not match zero levels (top-level)",
+        "Crash during list traversal",
+        "Transforms applied to wrong keys or not at all"
+      ]
     }
   ],
   "verification": {
